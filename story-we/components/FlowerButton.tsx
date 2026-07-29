@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react';
 import styles from '../styles/flowerButton.module.css';
 
@@ -18,7 +20,7 @@ export default function FlowerButton({ onClick, text = "Flowers" }: FlowerButton
                     <div className={`${styles.petal} ${styles.three}`}></div>
                     <div className={`${styles.petal} ${styles.four}`}></div>
                 </div>
-                
+
                 <div className={`${styles.flower} ${styles.flower2}`}>
                     <div className={`${styles.petal} ${styles.one}`}></div>
                     <div className={`${styles.petal} ${styles.two}`}></div>

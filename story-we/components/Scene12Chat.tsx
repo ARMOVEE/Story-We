@@ -6,16 +6,17 @@ import styles from '../styles/book.module.css';
 
 interface Scene12ChatProps {
     onNext?: () => void;
+    onPrev?: () => void;
 }
 
 const messages = [
-    { id: 1, side: 'left', text: 'hi', delay: 3.5 },
-    { id: 2, side: 'right', text: 'Okey SIPPP', delay: 6.5 },
-    { id: 3, side: 'left', text: 'Punten paket', delay: 9.5 },
-    { id: 4, side: 'right', text: 'AHAHAHA', delay: 12.5 },
+    { id: 1, side: 'left', sender: 'aku', text: 'hi', delay: 3.5 },
+    { id: 2, side: 'right', sender: 'dia', text: 'oke siip', delay: 6.5 },
+    { id: 3, side: 'left', sender: 'aku', text: 'punten pket', delay: 9.5 },
+    { id: 4, side: 'right', sender: 'dia', text: 'hahaha', delay: 12.5 },
 ];
 
-export default function Scene12Chat({ onNext }: Scene12ChatProps) {
+export default function Scene12Chat({ onNext, onPrev }: Scene12ChatProps) {
     const leftTextRef = useRef<HTMLDivElement>(null);
     const kissRef = useRef<HTMLDivElement>(null);
     const rightIntroRef = useRef<HTMLDivElement>(null);
@@ -72,6 +73,20 @@ export default function Scene12Chat({ onNext }: Scene12ChatProps) {
 
     return (
         <>
+            {onPrev && (
+                <div className={styles.navBtnWrapperLeft}>
+                    <button className={`${styles.navBtn} ${styles.navBtnPrev}`} onClick={onPrev}>
+                        <div className={styles.navBtnInner}>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" height="25px" width="25px">
+                                <path d="M224 480h640a32 32 0 1 1 0 64H224a32 32 0 0 1 0-64z" fill="#000" />
+                                <path d="m237.248 512 265.408 265.344a32 32 0 0 1-45.312 45.312l-288-288a32 32 0 0 1 0-45.312l288-288a32 32 0 1 1 45.312 45.312L237.248 512z" fill="#000" />
+                            </svg>
+                        </div>
+                        <p className={styles.navBtnText}>Kembali</p>
+                    </button>
+                </div>
+            )}
+
             {onNext && (
                 <div className={styles.navBtnWrapperRight}>
                     <button className={`${styles.navBtn} ${styles.navBtnNext}`} onClick={onNext}>
@@ -154,7 +169,18 @@ export default function Scene12Chat({ onNext }: Scene12ChatProps) {
                                 const isRight = msg.side === 'right';
 
                                 return (
-                                    <div key={msg.id} style={{ display: 'flex', justifyContent: isRight ? 'flex-end' : 'flex-start' }}>
+                                    <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isRight ? 'flex-end' : 'flex-start' }}>
+                                        {/* Sender Name */}
+                                        <div style={{
+                                            fontFamily: 'var(--font-handwriting)',
+                                            fontSize: '0.85rem',
+                                            color: '#888',
+                                            marginBottom: '0.2rem',
+                                            marginLeft: isRight ? 0 : '0.5rem',
+                                            marginRight: isRight ? '0.5rem' : 0,
+                                        }}>
+                                            {msg.sender}
+                                        </div>
                                         {isTyping ? (
                                             /* Typing bubble */
                                             <div style={{

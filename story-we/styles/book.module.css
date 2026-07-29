@@ -1255,3 +1255,392 @@
 .nextArrowBtn:hover {
   border-color: #e8729a;
 }
+
+/* ==========================================
+   Scene 5 — Flower Next Button (special, only for this scene)
+   ========================================== */
+
+.flowerNavBtn {
+  height: 4em;
+  width: 12em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0px solid black;
+  cursor: pointer;
+}
+
+.flowerNavWrapper {
+  height: 2em;
+  width: 8em;
+  position: relative;
+  background: transparent;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.flowerNavText {
+  font-size: 17px;
+  z-index: 1;
+  color: #000;
+  padding: 4px 12px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.7);
+  transition: all 0.5s ease;
+  font-family: var(--font-sans);
+}
+
+.fnFlower {
+  display: grid;
+  grid-template-columns: 1em 1em;
+  position: absolute;
+  transition: grid-template-columns 0.8s ease;
+}
+
+.fnFlower1 {
+  top: -12px;
+  left: -13px;
+  transform: rotate(5deg);
+}
+
+.fnFlower2 {
+  bottom: -5px;
+  left: 8px;
+  transform: rotate(35deg);
+}
+
+.fnFlower3 {
+  bottom: -15px;
+  transform: rotate(0deg);
+}
+
+.fnFlower4 {
+  top: -14px;
+  transform: rotate(15deg);
+}
+
+.fnFlower5 {
+  right: 11px;
+  top: -3px;
+  transform: rotate(25deg);
+}
+
+.fnFlower6 {
+  right: -15px;
+  bottom: -15px;
+  transform: rotate(30deg);
+}
+
+.fnPetal {
+  height: 1em;
+  width: 1em;
+  border-radius: 40% 70% / 7% 90%;
+  background: linear-gradient(#07a6d7, #93e0ee);
+  border: 0.5px solid #96d1ec;
+  z-index: 0;
+  transition: width 0.8s ease, height 0.8s ease;
+}
+
+.fnPetalTwo {
+  transform: rotate(90deg);
+}
+
+.fnPetalThree {
+  transform: rotate(270deg);
+}
+
+.fnPetalFour {
+  transform: rotate(180deg);
+}
+
+.flowerNavBtn:hover .fnPetal {
+  background: linear-gradient(#0761d7, #93bdee);
+  border: 0.5px solid #96b4ec;
+}
+
+.flowerNavBtn:hover .fnFlower {
+  grid-template-columns: 1.5em 1.5em;
+}
+
+.flowerNavBtn:hover .fnFlower .fnPetal {
+  width: 1.5em;
+  height: 1.5em;
+}
+
+.flowerNavBtn:hover .flowerNavText {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.flowerNavBtn:hover div.fnFlower1 {
+  animation: 15s linear 0s normal none infinite running fnSpin1;
+}
+
+@keyframes fnSpin1 {
+  0% {
+    transform: rotate(5deg);
+  }
+
+  100% {
+    transform: rotate(365deg);
+  }
+}
+
+.flowerNavBtn:hover div.fnFlower2 {
+  animation: 13s linear 1s normal none infinite running fnSpin2;
+}
+
+@keyframes fnSpin2 {
+  0% {
+    transform: rotate(35deg);
+  }
+
+  100% {
+    transform: rotate(-325deg);
+  }
+}
+
+.flowerNavBtn:hover div.fnFlower3 {
+  animation: 16s linear 1s normal none infinite running fnSpin3;
+}
+
+@keyframes fnSpin3 {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.flowerNavBtn:hover div.fnFlower4 {
+  animation: 17s linear 1s normal none infinite running fnSpin4;
+}
+
+@keyframes fnSpin4 {
+  0% {
+    transform: rotate(15deg);
+  }
+
+  100% {
+    transform: rotate(375deg);
+  }
+}
+
+.flowerNavBtn:hover div.fnFlower5 {
+  animation: 20s linear 1s normal none infinite running fnSpin5;
+}
+
+@keyframes fnSpin5 {
+  0% {
+    transform: rotate(25deg);
+  }
+
+  100% {
+    transform: rotate(-335deg);
+  }
+}
+
+.flowerNavBtn:hover div.fnFlower6 {
+  animation: 15s linear 1s normal none infinite running fnSpin6;
+}
+
+@keyframes fnSpin6 {
+  0% {
+    transform: rotate(30deg);
+  }
+
+  100% {
+    transform: rotate(390deg);
+  }
+}
+
+/* ==========================================
+   Scene 8 — Puzzle "Give Up" hand-drawn button
+   ========================================== */
+
+.pzGiveUpBtn {
+  position: relative;
+  text-align: center;
+  transition: 0.3s ease-in-out;
+  cursor: pointer;
+  background-color: transparent;
+  filter: url(#pzHandDrawnNoise);
+  display: inline-flex;
+  align-items: center;
+  user-select: none;
+  font-family: "Courier New", monospace;
+  font-size: 1.1rem;
+  font-weight: bold;
+  padding: 0.8em 1.2em;
+  border-width: 0px;
+  border-radius: 2rem;
+  box-shadow: #33333366 4px 4px 0 1px;
+  animation: pzIdle 1s infinite ease-in-out;
+  color: #e74c3c;
+}
+
+.pzGiveUpHighlight {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  fill: rgba(255, 225, 0, 0.5);
+  stroke: rgba(255, 225, 0, 0.5);
+  stroke-width: 10;
+  stroke-linecap: round;
+  pointer-events: none;
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  transition: stroke-dashoffset 0.5s ease-in-out;
+}
+
+@keyframes pzIdle {
+  0% {
+    filter: url(#pzHandDrawnNoise);
+  }
+
+  50% {
+    rotate: 2.5deg;
+    filter: url(#pzHandDrawnNoise2);
+  }
+
+  100% {
+    filter: url(#pzHandDrawnNoise);
+  }
+}
+
+.pzGiveUpCosm {
+  fill: #33333366;
+  transition: 0.3s ease-out;
+  scale: 0.5;
+  position: absolute;
+  translate: calc(-100% + 24px) 1.5rem;
+}
+
+.pzGiveUpBtn:hover {
+  font-weight: bold;
+  border-width: 0px;
+  border-radius: 2rem;
+  rotate: -2.5deg;
+  animation: pzHover 2.5s infinite ease-in-out;
+}
+
+.pzGiveUpBtn:hover .pzGiveUpHighlight {
+  stroke-dashoffset: 0;
+}
+
+.pzGiveUpBtn:active .pzGiveUpHighlight {
+  stroke-dashoffset: 1000;
+  animation: pzHighlight 5s infinite, pzCol 0.5s forwards;
+  stroke: #bc4e2666;
+}
+
+@keyframes pzCol {
+  0% {
+    stroke: rgba(255, 225, 0, 0.5);
+  }
+
+  100% {
+    stroke: #1c98eb66;
+  }
+}
+
+@keyframes pzHighlight {
+  0% {
+    stroke-dashoffset: 0;
+  }
+
+  25% {
+    stroke-dashoffset: 1000;
+  }
+
+  50% {
+    stroke-dashoffset: 1000;
+  }
+
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes pzHover {
+  0% {
+    rotate: 0deg;
+    filter: url(#pzHandDrawnNoise);
+    translate: 0 0px;
+  }
+
+  25% {
+    rotate: -1deg;
+    filter: url(#pzHandDrawnNoise2);
+    translate: 0 -2px;
+  }
+
+  50% {
+    rotate: 0deg;
+    filter: url(#pzHandDrawnNoise);
+    translate: 0 2px;
+  }
+
+  75% {
+    rotate: -1deg;
+    filter: url(#pzHandDrawnNoise2);
+    translate: 0 -2px;
+  }
+
+  100% {
+    rotate: 0deg;
+    filter: url(#pzHandDrawnNoise);
+    translate: 0 0px;
+  }
+}
+
+.pzGiveUpBtn:hover .pzGiveUpCosm {
+  rotate: -15deg;
+  translate: calc(-100% + 22px) 1.9rem;
+}
+
+.pzGiveUpBtn:active .pzGiveUpCosm {
+  fill: #333333f1;
+  rotate: -135deg;
+  translate: calc(-100% + 55px) 1.6rem;
+  animation: none;
+}
+
+.pzGiveUpBtn:active {
+  font-weight: bold;
+  border-width: 0px;
+  border-radius: 2rem;
+  box-shadow: inset #333333f1 4px 4px 0 1px;
+  rotate: -2.5deg;
+  animation: pzActive 1s infinite ease-in-out;
+}
+
+@keyframes pzActive {
+  0% {
+    filter: url(#pzHandDrawnNoiseT);
+    translate: 0 -1px;
+  }
+
+  25% {
+    rotate: -3deg;
+  }
+
+  50% {
+    filter: url(#pzHandDrawnNoiseT2);
+    translate: 0 1px;
+  }
+
+  66% {
+    rotate: 1.5deg;
+  }
+
+  100% {
+    filter: url(#pzHandDrawnNoiseT);
+    translate: 0 -1px;
+  }
+}

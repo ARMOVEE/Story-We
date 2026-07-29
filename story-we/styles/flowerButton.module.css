@@ -82,6 +82,10 @@
   transition: width 0.8s ease, height 0.8s ease;
 }
 
+.one {
+  transform: rotate(0deg);
+}
+
 .two {
   transform: rotate(90deg);
 }
@@ -117,8 +121,13 @@
 }
 
 @keyframes flower1 {
-  0% { transform: rotate(5deg); }
-  100% { transform: rotate(365deg); }
+  0% {
+    transform: rotate(5deg);
+  }
+
+  100% {
+    transform: rotate(365deg);
+  }
 }
 
 .btn:hover div.flower2 {
@@ -126,8 +135,13 @@
 }
 
 @keyframes flower2 {
-  0% { transform: rotate(35deg); }
-  100% { transform: rotate(-325deg); }
+  0% {
+    transform: rotate(35deg);
+  }
+
+  100% {
+    transform: rotate(-325deg);
+  }
 }
 
 .btn:hover div.flower3 {
@@ -135,8 +149,13 @@
 }
 
 @keyframes flower3 {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .btn:hover div.flower4 {
@@ -144,8 +163,13 @@
 }
 
 @keyframes flower4 {
-  0% { transform: rotate(15deg); }
-  100% { transform: rotate(375deg); }
+  0% {
+    transform: rotate(15deg);
+  }
+
+  100% {
+    transform: rotate(375deg);
+  }
 }
 
 .btn:hover div.flower5 {
@@ -153,8 +177,13 @@
 }
 
 @keyframes flower5 {
-  0% { transform: rotate(25deg); }
-  100% { transform: rotate(-335deg); }
+  0% {
+    transform: rotate(25deg);
+  }
+
+  100% {
+    transform: rotate(-335deg);
+  }
 }
 
 .btn:hover div.flower6 {
@@ -162,6 +191,11 @@
 }
 
 @keyframes flower6 {
-  0% { transform: rotate(30deg); }
-  100% { transform: rotate(390deg); }
+  0% {
+    transform: rotate(30deg);
+  }
+
+  100% {
+    transform: rotate(390deg);
+  }
 }

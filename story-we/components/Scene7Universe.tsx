@@ -6,6 +6,7 @@ import styles from '../styles/book.module.css';
 
 interface Scene7UniverseProps {
     onNext?: () => void;
+    onPrev?: () => void;
 }
 
 const KissMark = ({ color = "#e8a5a5", size = 40 }) => (
@@ -35,7 +36,7 @@ const HandDrawnStar = ({ color, size }: { color: string, size: number }) => (
     </svg>
 );
 
-export default function Scene7Universe({ onNext }: Scene7UniverseProps) {
+export default function Scene7Universe({ onNext, onPrev }: Scene7UniverseProps) {
     const pageRef = useRef<HTMLDivElement>(null);
     const textRef = useRef<HTMLDivElement>(null);
     const starsRef = useRef<HTMLDivElement>(null);
@@ -125,6 +126,20 @@ export default function Scene7Universe({ onNext }: Scene7UniverseProps) {
 
     return (
         <>
+            {onPrev && (
+                <div className={styles.navBtnWrapperLeft}>
+                    <button className={`${styles.navBtn} ${styles.navBtnPrev}`} onClick={onPrev}>
+                        <div className={styles.navBtnInner}>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" height="25px" width="25px">
+                                <path d="M224 480h640a32 32 0 1 1 0 64H224a32 32 0 0 1 0-64z" fill="#000" />
+                                <path d="m237.248 512 265.408 265.344a32 32 0 0 1-45.312 45.312l-288-288a32 32 0 0 1 0-45.312l288-288a32 32 0 1 1 45.312 45.312L237.248 512z" fill="#000" />
+                            </svg>
+                        </div>
+                        <p className={styles.navBtnText}>Go Back</p>
+                    </button>
+                </div>
+            )}
+
             {onNext && (
                 <div className={styles.navBtnWrapperRight}>
                     <button className={`${styles.navBtn} ${styles.navBtnNext}`} onClick={onNext}>

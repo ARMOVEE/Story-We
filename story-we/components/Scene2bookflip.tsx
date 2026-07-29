@@ -12,44 +12,41 @@ interface Scene2BookFlipProps {
 // September 2025: Sep 1 = Monday → offset = 0
 const SEPT_2025_DAYS = 30;
 const SEPT_2025_START = 0;
-const DAY_HEADERS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const HEART_DAY = 13;
+const MONTH_LABEL = 'September';
+const YEAR_LABEL = '2025';
+const BOTTOM_TEXT = 'Ini Adalah Tanggal Jadian Kita!!!';
 
 export default function Scene2BookFlip({ onNext, onPrev }: Scene2BookFlipProps) {
-    const wrapperRef   = useRef<HTMLDivElement>(null);
-    const pageRef      = useRef<HTMLDivElement>(null);
+    const wrapperRef = useRef<HTMLDivElement>(null);
+    const pageRef = useRef<HTMLDivElement>(null);
     const heartPathRef = useRef<SVGPathElement>(null);
-    const dashPathRef  = useRef<SVGPathElement>(null);
-    const arrowRef     = useRef<SVGGElement>(null);
-    const textRef      = useRef<HTMLDivElement>(null);
+    const dashPathRef = useRef<SVGPathElement>(null);
+    const arrowRef = useRef<SVGGElement>(null);
+    const textRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         requestAnimationFrame(() => {
-            // init heart stroke (hidden)
             if (heartPathRef.current) {
                 const len = heartPathRef.current.getTotalLength();
                 heartPathRef.current.style.strokeDasharray = `${len}`;
                 heartPathRef.current.style.strokeDashoffset = `${len}`;
             }
-            // init dashed curved path (hidden) — we'll override dasharray after hiding
             if (dashPathRef.current) {
                 const len = dashPathRef.current.getTotalLength();
                 dashPathRef.current.style.strokeDashoffset = `${len}`;
             }
-            // hide arrowhead + text
             if (arrowRef.current) gsap.set(arrowRef.current, { opacity: 0 });
-            if (textRef.current)  gsap.set(textRef.current,  { opacity: 0, y: 8 });
+            if (textRef.current) gsap.set(textRef.current, { opacity: 0, y: 8 });
 
             const tl = gsap.timeline();
 
-            // 1) draw heart around day 13
             if (heartPathRef.current)
                 tl.to(heartPathRef.current, { strokeDashoffset: 0, duration: 1.2, ease: 'power1.inOut' }, 0.4);
 
-            // 2) draw the dashed curved line
             if (dashPathRef.current)
-                tl.to(dashPathRef.current, { strokeDashoffset: 0, duration: 1.8, ease: 'power1.inOut' }, '+=0.3');
+                tl.to(dashPathRef.current, { strokeDashoffset: 0, duration: 2.2, ease: 'power1.inOut' }, '+=0.3');
 
-            // 3) pop arrowhead + fade text
             if (arrowRef.current)
                 tl.to(arrowRef.current, { opacity: 1, duration: 0.3 }, '+=0.05');
             if (textRef.current)
@@ -80,19 +77,21 @@ export default function Scene2BookFlip({ onNext, onPrev }: Scene2BookFlipProps) 
 
     return (
         <>
+            {/* ── Left button (hidden on page 1) ── */}
             {onPrev && (
                 <div className={styles.navBtnWrapperLeft}>
-                    <button className={styles.navBtn} onClick={onPrev}>
+                    <button className={`${styles.navBtn} ${styles.navBtnPrev}`} onClick={onPrev}>
                         <div className={styles.navBtnInner}>
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" height="25px" width="25px">
                                 <path d="M224 480h640a32 32 0 1 1 0 64H224a32 32 0 0 1 0-64z" fill="#000" />
                                 <path d="m237.248 512 265.408 265.344a32 32 0 0 1-45.312 45.312l-288-288a32 32 0 0 1 0-45.312l288-288a32 32 0 1 1 45.312 45.312L237.248 512z" fill="#000" />
                             </svg>
                         </div>
-                        <p className={styles.navBtnText}>Kembali</p>
+                        <p className={styles.navBtnText}>Go Back</p>
                     </button>
                 </div>
             )}
+
             <div className={styles.navBtnWrapperRight}>
                 <button className={`${styles.navBtn} ${styles.navBtnNext}`} onClick={handleNext}>
                     <div className={styles.navBtnInner}>
@@ -110,8 +109,8 @@ export default function Scene2BookFlip({ onNext, onPrev }: Scene2BookFlipProps) 
                 <div className={`${styles.pageLeft} ${styles.linedPage}`}>
                     <div className={styles.pageContent} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
                         <div style={{ fontFamily: 'var(--font-handwriting)', fontSize: '1.8rem', color: '#ccc', textAlign: 'center', lineHeight: 2 }}>
-                            <div>September</div>
-                            <div>2025</div>
+                            <div>{MONTH_LABEL}</div>
+                            <div>{YEAR_LABEL}</div>
                         </div>
                     </div>
                 </div>
@@ -119,23 +118,26 @@ export default function Scene2BookFlip({ onNext, onPrev }: Scene2BookFlipProps) 
                 {/* ── RIGHT PAGE — calendar ── */}
                 <div className={`${styles.page} ${styles.linedPage}`} ref={pageRef}>
                     <div className={styles.pageContent}>
-                        <div style={{ padding: '0.5rem 1rem', borderRadius: '4px', marginBottom: '0.8rem', fontWeight: 'bold', fontFamily: 'var(--font-handwriting)', fontSize: '1.2rem', color: '#e74c3c' }}>
-                            September 2025
+                        {/* Title: ♥ Month ♥  /  Year — matches reference photo layout */}
+                        <div style={{ marginBottom: '0.6rem', fontFamily: 'var(--font-handwriting)' }}>
+                            <div style={{ fontSize: '1.6rem', fontWeight: 'bold', color: '#c0392b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span style={{ color: '#e74c3c' }}>♥</span>
+                                {MONTH_LABEL}
+                                <span style={{ color: '#e74c3c' }}>♥</span>
+                            </div>
+                            <div style={{ fontSize: '1.2rem', color: '#888', marginTop: '0.2rem' }}>
+                                {YEAR_LABEL}
+                            </div>
                         </div>
 
                         <div style={{ position: 'relative', width: '100%' }}>
-                            {/* Day-of-week headers */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.3rem 0.5rem', fontSize: '0.75rem', textAlign: 'center', color: '#e74c3c', marginBottom: '0.3rem' }}>
-                                {DAY_HEADERS.map(h => <div key={h}><strong>{h}</strong></div>)}
-                            </div>
-
-                            {/* Calendar date grid */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.4rem 0.5rem', fontSize: '1.05rem', textAlign: 'center', color: '#444' }}>
+                            {/* Calendar date grid — no weekday header, matches photo */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.6rem 0.5rem', fontSize: '1.05rem', textAlign: 'center', color: '#444' }}>
                                 {calendarCells.map((day, idx) => (
                                     <div key={idx} style={{ position: 'relative', minHeight: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         {day !== null && day}
-                                        {/* Animated heart outline around day 13 */}
-                                        {day === 13 && (
+                                        {/* Animated heart outline around the special day */}
+                                        {day === HEART_DAY && (
                                             <svg
                                                 viewBox="-12 -12 44 44"
                                                 style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '48px', height: '48px', overflow: 'visible', zIndex: 3, pointerEvents: 'none' }}
@@ -154,12 +156,13 @@ export default function Scene2BookFlip({ onNext, onPrev }: Scene2BookFlipProps) 
                                 ))}
                             </div>
 
-                            {/* Spacer: room for the dashed-line loop + text below grid */}
-                            <div style={{ height: '130px' }} />
+                            {/* Spacer: room for the winding dashed line + text below grid */}
+                            <div style={{ height: '150px' }} />
 
-                            {/* SVG overlay for the arrow + dashed path */}
+                            {/* SVG overlay for the winding dashed path + arrow —
+                                meliuk turun melewati beberapa baris, seperti di foto */}
                             <svg
-                                viewBox="0 0 320 260"
+                                viewBox="0 0 320 300"
                                 style={{
                                     position: 'absolute', top: 0, left: 0,
                                     width: '100%', height: '100%',
@@ -167,33 +170,26 @@ export default function Scene2BookFlip({ onNext, onPrev }: Scene2BookFlipProps) 
                                 }}
                                 fill="none"
                             >
-                                {/* Dashed curved teardrop path */}
                                 <path
                                     ref={dashPathRef}
                                     d="
-                                        M 251,80
-                                        C 275,95  290,130  275,158
-                                        C 260,186  230,190  212,173
-                                        C 194,156  200,128  218,118
-                                        C 236,108  256,124  254,146
-                                        C 252,163  238,174  225,168
-                                        C 212,162  210,146  218,136
-                                        C 224,128  234,126  242,132
-                                        L 232,175
-                                        L 220,210
-                                        L 160,238
+                                        M 251,75
+                                        C 250,110 200,120 150,130
+                                        C 90,140 80,175 115,180
+                                        C 150,185 160,160 160,200
+                                        L 160,242
                                     "
                                     stroke="#e74c3c"
                                     strokeWidth="2"
-                                    strokeDasharray="5 4"
+                                    strokeDasharray="6, 6"
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
                                 />
 
-                                {/* Arrowhead at (160,238) pointing downward */}
+                                {/* Arrowhead pointing downward, ends near bottom text */}
                                 <g ref={arrowRef}>
                                     <polyline
-                                        points="153,230 160,239 167,230"
+                                        points="153,235 160,244 167,235"
                                         stroke="#e74c3c"
                                         strokeWidth="2"
                                         strokeLinecap="round"
@@ -202,7 +198,7 @@ export default function Scene2BookFlip({ onNext, onPrev }: Scene2BookFlipProps) 
                                 </g>
                             </svg>
 
-                            {/* Romantic text at bottom of relative container */}
+                            {/* Bottom text, flanked by hearts — matches "It's your birthday" style */}
                             <div
                                 ref={textRef}
                                 style={{
@@ -216,9 +212,9 @@ export default function Scene2BookFlip({ onNext, onPrev }: Scene2BookFlipProps) 
                                     lineHeight: '1.4',
                                 }}
                             >
-                                <span style={{ color: '#e74c3c' }}>♡ </span>
-                                Ini Adalah Tanggal Jadian Kita!!!
-                                <span style={{ color: '#e74c3c' }}> ♡</span>
+                                <span style={{ color: '#e74c3c' }}>♥ </span>
+                                {BOTTOM_TEXT}
+                                <span style={{ color: '#e74c3c' }}> ♥</span>
                             </div>
 
                         </div>{/* end relative wrapper */}

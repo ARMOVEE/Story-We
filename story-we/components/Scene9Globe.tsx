@@ -6,16 +6,29 @@ import styles from '../styles/book.module.css';
 
 interface Scene9GlobeProps {
     onNext?: () => void;
+    onPrev?: () => void;
 }
 
-export default function Scene9Globe({ onNext }: Scene9GlobeProps) {
+export default function Scene9Globe({ onNext, onPrev }: Scene9GlobeProps) {
     const textLeftRef = useRef<HTMLDivElement>(null);
     const textRightRef = useRef<HTMLDivElement>(null);
+
     const globeRef = useRef<SVGSVGElement>(null);
-    const leftLegRef = useRef<SVGGElement>(null);
-    const rightLegRef = useRef<SVGGElement>(null);
+    // Two figures (male + female) holding hands. Outer legs (the ones pointing
+    // away from each other) swing together; inner legs (pointing toward each
+    // other) swing together — reads as a couple walking in step.
+    const maleOuterLegRef = useRef<SVGLineElement>(null);
+    const maleInnerLegRef = useRef<SVGLineElement>(null);
+    const femaleOuterLegRef = useRef<SVGLineElement>(null);
+    const femaleInnerLegRef = useRef<SVGLineElement>(null);
+    // Only the free (outer) arms swing — the inner arms are the clasped hands
+    // and stay put so the "holding hands" reads clearly.
+    const maleFreeArmRef = useRef<SVGLineElement>(null);
+    const femaleFreeArmRef = useRef<SVGLineElement>(null);
+    const bodyRef = useRef<SVGGElement>(null);
     const bubbleRef = useRef<HTMLDivElement>(null);
-    const highlightRef = useRef<SVGSVGElement>(null);
+    const underlineRef = useRef<SVGSVGElement>(null);
+    const circleRef = useRef<SVGSVGElement>(null);
 
     useEffect(() => {
         const tl = gsap.timeline();
@@ -37,62 +50,100 @@ export default function Scene9Globe({ onNext }: Scene9GlobeProps) {
             );
         }
 
-        // Highlights (Red line, yellow circle)
-        if (highlightRef.current) {
-            const paths = highlightRef.current.querySelectorAll('path');
-            tl.fromTo(paths,
-                { strokeDasharray: 200, strokeDashoffset: 200 },
-                { strokeDashoffset: 0, duration: 0.6, stagger: 0.4, ease: 'power2.out' },
+        // Highlights (red underline under "Hebat", yellow circle around "KAMU")
+        const highlightPaths: SVGPathElement[] = [];
+        if (underlineRef.current) highlightPaths.push(...Array.from(underlineRef.current.querySelectorAll('path')));
+        if (circleRef.current) highlightPaths.push(...Array.from(circleRef.current.querySelectorAll('path')));
+        if (highlightPaths.length) {
+            tl.fromTo(highlightPaths,
+                { strokeDasharray: 300, strokeDashoffset: 300 },
+                { strokeDashoffset: 0, duration: 0.7, stagger: 0.4, ease: 'power2.out' },
                 "-=0.2"
             );
         }
 
         // Globe and character pop in
-        tl.fromTo([globeRef.current, leftLegRef.current, rightLegRef.current],
+        tl.fromTo([globeRef.current, bodyRef.current],
             { opacity: 0, scale: 0 },
-            { opacity: 1, scale: 1, duration: 0.8, ease: 'back.out(1.5)' },
-            "-=0.5"
+            { opacity: 1, scale: 1, duration: 0.8, ease: 'back.out(1.5)', transformOrigin: 'center bottom' },
+            "-=0.3"
         );
 
-        // Walking Animation
-        if (leftLegRef.current && rightLegRef.current) {
-            gsap.fromTo(leftLegRef.current,
+        // Walking cycle — using exact pixel transformOrigins (hips) for perfect anchoring
+        if (maleOuterLegRef.current && femaleOuterLegRef.current) {
+            gsap.fromTo(maleOuterLegRef.current,
                 { rotation: -25 },
-                { rotation: 25, transformOrigin: 'top center', repeat: -1, yoyo: true, duration: 0.35, ease: 'sine.inOut' }
+                { rotation: 25, transformOrigin: '22px 34px', repeat: -1, yoyo: true, duration: 0.35, ease: 'sine.inOut' }
             );
-            gsap.fromTo(rightLegRef.current,
+            gsap.fromTo(femaleOuterLegRef.current,
+                { rotation: -25 },
+                { rotation: 25, transformOrigin: '52px 34px', repeat: -1, yoyo: true, duration: 0.35, ease: 'sine.inOut' }
+            );
+        }
+        if (maleInnerLegRef.current && femaleInnerLegRef.current) {
+            gsap.fromTo(maleInnerLegRef.current,
                 { rotation: 25 },
-                { rotation: -25, transformOrigin: 'top center', repeat: -1, yoyo: true, duration: 0.35, ease: 'sine.inOut' }
+                { rotation: -25, transformOrigin: '22px 34px', repeat: -1, yoyo: true, duration: 0.35, ease: 'sine.inOut' }
+            );
+            gsap.fromTo(femaleInnerLegRef.current,
+                { rotation: 25 },
+                { rotation: -25, transformOrigin: '52px 34px', repeat: -1, yoyo: true, duration: 0.35, ease: 'sine.inOut' }
+            );
+        }
+        // Free arms swinging
+        if (maleFreeArmRef.current) {
+            gsap.fromTo(maleFreeArmRef.current,
+                { rotation: 20 },
+                { rotation: -20, transformOrigin: '22px 22px', repeat: -1, yoyo: true, duration: 0.35, ease: 'sine.inOut' }
+            );
+        }
+        if (femaleFreeArmRef.current) {
+            gsap.fromTo(femaleFreeArmRef.current,
+                { rotation: -20 },
+                { rotation: 20, transformOrigin: '52px 22px', repeat: -1, yoyo: true, duration: 0.35, ease: 'sine.inOut' }
+            );
+        }
+        // Tiny body bob so each "step" reads as a step (bobs twice per full leg swing)
+        if (bodyRef.current) {
+            gsap.fromTo(bodyRef.current,
+                { y: 0 },
+                { y: -2.5, repeat: -1, yoyo: true, duration: 0.175, ease: 'sine.inOut' }
             );
         }
 
-        // Globe Rotation
+        // Globe rotates opposite the walk direction — reads as the character
+        // pushing the world backward under their own feet as they step forward.
         if (globeRef.current) {
             gsap.to(globeRef.current, {
                 rotation: -360,
                 transformOrigin: 'center center',
                 repeat: -1,
-                duration: 6,
+                duration: 5,
                 ease: 'none'
             });
         }
 
-        // Speech Bubble Pop
+        // Speech bubble — pops in suddenly like a surprised shout, after a beat of walking
         if (bubbleRef.current) {
             tl.fromTo(bubbleRef.current,
-                { opacity: 0, scale: 0, transformOrigin: 'bottom left' },
-                { opacity: 1, scale: 1, duration: 0.6, ease: 'back.out(2)' },
-                "+=1.0"
+                { opacity: 0, scale: 0, rotation: -8, transformOrigin: '85% 100%' },
+                { opacity: 1, scale: 1, rotation: 0, duration: 0.45, ease: 'back.out(3)' },
+                "+=1.2"
             );
-            
-            // Subtle floating of bubble
+            // Quick little shake right after it appears, for the "shout" feel
+            tl.fromTo(bubbleRef.current,
+                { x: 0 },
+                { x: 3, duration: 0.06, repeat: 5, yoyo: true, ease: 'none' }
+            );
+
+            // Then settle into a slow float
             gsap.to(bubbleRef.current, {
-                y: -5,
+                y: -6,
                 repeat: -1,
                 yoyo: true,
-                duration: 1.5,
+                duration: 1.6,
                 ease: 'sine.inOut',
-                delay: 3
+                delay: 3.5
             });
         }
 
@@ -101,6 +152,20 @@ export default function Scene9Globe({ onNext }: Scene9GlobeProps) {
 
     return (
         <>
+            {onPrev && (
+                <div className={styles.navBtnWrapperLeft}>
+                    <button className={`${styles.navBtn} ${styles.navBtnPrev}`} onClick={onPrev}>
+                        <div className={styles.navBtnInner}>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" height="25px" width="25px">
+                                <path d="M224 480h640a32 32 0 1 1 0 64H224a32 32 0 0 1 0-64z" fill="#000" />
+                                <path d="m237.248 512 265.408 265.344a32 32 0 0 1-45.312 45.312l-288-288a32 32 0 0 1 0-45.312l288-288a32 32 0 1 1 45.312 45.312L237.248 512z" fill="#000" />
+                            </svg>
+                        </div>
+                        <p className={styles.navBtnText}>Kembali</p>
+                    </button>
+                </div>
+            )}
+
             {onNext && (
                 <div className={styles.navBtnWrapperRight}>
                     <button className={`${styles.navBtn} ${styles.navBtnNext}`} onClick={onNext}>
@@ -144,76 +209,129 @@ export default function Scene9Globe({ onNext }: Scene9GlobeProps) {
                             Date:
                         </div>
 
-                        <div style={{ marginTop: '2.5rem', paddingLeft: '2rem' }}>
-                            <div ref={textRightRef} style={{ fontFamily: 'var(--font-handwriting)', fontSize: '1.4rem', color: '#333', lineHeight: '2.2' }}>
-                                <div style={{ paddingLeft: '2rem' }}>Bumi memiliki</div>
-                                <div style={{ paddingLeft: '1rem' }}>banyak orang</div>
-                                <div style={{ position: 'relative', display: 'inline-block', paddingLeft: '3rem', color: '#e74c3c' }}>
-                                    Hebat
-                                    <svg ref={highlightRef} width="80" height="20" style={{ position: 'absolute', bottom: '-5px', left: '2.8rem' }}>
-                                        {/* Red underline */}
-                                        <path d="M 0 10 Q 30 15, 60 5 T 75 10" fill="none" stroke="#e74c3c" strokeWidth="2.5" strokeLinecap="round" />
-                                    </svg>
-                                </div>
-                                <div style={{ paddingLeft: '3.5rem' }}>yaitu...</div>
-                                <div style={{ position: 'relative', display: 'inline-block', paddingLeft: '1.5rem', fontWeight: 'bold' }}>
-                                    KAMU
-                                    <svg ref={highlightRef} width="100" height="50" style={{ position: 'absolute', top: '-10px', left: '0.5rem', overflow: 'visible' }}>
-                                        {/* Yellow circle */}
-                                        <path d="M 20 25 C 20 5, 80 5, 80 25 C 80 45, 20 45, 20 25 Z" fill="none" stroke="#f1c40f" strokeWidth="2.5" strokeLinecap="round" />
-                                    </svg>
-                                </div>
-                                <div style={{ paddingLeft: '2.5rem' }}>salah</div>
-                                <div style={{ paddingLeft: '4rem' }}>satunya</div>
-                            </div>
-                        </div>
+                        {/* Text column + illustration column live side by side in a flex row.
+                            This keeps the illustration fully inside the page's own box —
+                            no negative offsets that can push it past the page edge. */}
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginTop: '2.5rem', paddingLeft: '2rem', paddingRight: '1.5rem' }}>
 
-                        {/* Illustration Container */}
-                        <div style={{ position: 'absolute', bottom: '3rem', right: '3rem', width: '150px', height: '200px' }}>
-                            
-                            {/* Speech Bubble */}
-                            <div ref={bubbleRef} style={{ position: 'absolute', top: '-30px', left: '-120px', zIndex: 15 }}>
-                                <svg width="160" height="80" viewBox="0 0 160 80">
-                                    <path d="M 10 10 Q 150 10, 150 40 Q 150 60, 100 65 L 120 80 L 80 65 Q 10 60, 10 40 Z" fill="white" stroke="#333" strokeWidth="2" strokeLinejoin="round" />
-                                    <text x="75" y="45" fontFamily="var(--font-handwriting)" fontSize="16" fontWeight="bold" textAnchor="middle" fill="#333">
-                                        AKU SAYANG REVA!
-                                    </text>
-                                </svg>
+                            <div ref={textRightRef} style={{ flex: '1 1 auto', fontFamily: 'var(--font-handwriting)', fontSize: '1.4rem', color: '#333', lineHeight: '2.2' }}>
+                                <div style={{ paddingLeft: '1.5rem' }}>Bumi memiliki</div>
+                                <div style={{ paddingLeft: '0.5rem' }}>banyak orang</div>
+
+                                <div style={{ paddingLeft: '1rem' }}>
+                                    <span style={{ position: 'relative', display: 'inline-block', color: '#e74c3c', fontWeight: 'bold' }}>
+                                        Hebat
+                                        <svg ref={underlineRef} width="86" height="18" viewBox="0 0 86 18" style={{ position: 'absolute', bottom: '-8px', left: '0', overflow: 'visible' }}>
+                                            <path d="M 2 8 Q 22 14, 43 6 Q 64 -1, 83 9" fill="none" stroke="#e74c3c" strokeWidth="2.5" strokeLinecap="round" />
+                                        </svg>
+                                    </span>
+                                </div>
+
+                                <div style={{ paddingLeft: '2rem' }}>yaitu...</div>
+
+                                <div style={{ paddingLeft: '0.25rem' }}>
+                                    <span style={{ position: 'relative', display: 'inline-block', fontWeight: 'bold', padding: '0 0.35rem' }}>
+                                        KAMU
+                                        <svg ref={circleRef} width="128" height="56" viewBox="0 0 128 56" style={{ position: 'absolute', top: '-13px', left: '-14px', overflow: 'visible' }}>
+                                            <path
+                                                d="M 20 28 C 18 8, 45 4, 64 5 C 85 4, 112 9, 110 29
+                                                   C 112 49, 85 53, 64 52 C 45 53, 18 48, 20 28 Z"
+                                                fill="none" stroke="#f1c40f" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+                                            />
+                                        </svg>
+                                    </span>
+                                </div>
+
+                                <div style={{ paddingLeft: '1.75rem' }}>Salah</div>
+                                <div style={{ paddingLeft: '3rem' }}>satunya</div>
                             </div>
 
-                            {/* Character */}
-                            <div style={{ position: 'absolute', top: '35px', left: '60px', zIndex: 10 }}>
-                                <svg width="40" height="70" viewBox="0 0 50 100" style={{ overflow: 'visible' }}>
-                                    {/* Action lines above head */}
-                                    <path d="M 15 5 L 10 -5 M 25 2 L 25 -10 M 35 5 L 40 -5" fill="none" stroke="#f1c40f" strokeWidth="2" strokeLinecap="round" />
+                            {/* Illustration column: speech bubble stacked directly above the
+                                character-on-globe group. Normal flow (flex column), not
+                                absolute — so it can never spill past the page edge or get
+                                clipped, and everything scales together as one block. */}
+                            <div style={{ flex: '0 0 170px', display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '1.5rem' }}>
+
+                                {/* Couple-on-globe group: a single relative box sized so the
+                                    pair's feet always land right on the globe's top edge. */}
+                                <div style={{ position: 'relative', width: '150px', height: '150px', marginTop: '80px' }}>
                                     
-                                    {/* Head */}
-                                    <circle cx="25" cy="20" r="8" fill="none" stroke="#333" strokeWidth="2.5" />
-                                    {/* Body */}
-                                    <line x1="25" y1="28" x2="25" y2="60" stroke="#333" strokeWidth="2.5" strokeLinecap="round" />
-                                    {/* Arms */}
-                                    <line x1="25" y1="40" x2="10" y2="50" stroke="#333" strokeWidth="2.5" strokeLinecap="round" />
-                                    <line x1="25" y1="40" x2="45" y2="30" stroke="#333" strokeWidth="2.5" strokeLinecap="round" />
-                                    {/* Legs */}
-                                    <g ref={leftLegRef}>
-                                        <line x1="25" y1="60" x2="15" y2="90" stroke="#333" strokeWidth="2.5" strokeLinecap="round" />
-                                    </g>
-                                    <g ref={rightLegRef}>
-                                        <line x1="25" y1="60" x2="35" y2="90" stroke="#333" strokeWidth="2.5" strokeLinecap="round" />
-                                    </g>
-                                </svg>
-                            </div>
+                                    {/* Speech bubble — sudden shout, positioned above male character */}
+                                    <div ref={bubbleRef} style={{ position: 'absolute', top: '-90px', left: '-30px', zIndex: 15 }}>
+                                        <svg width="140" height="90" viewBox="0 0 140 90" style={{ overflow: 'visible' }}>
+                                            {/* Jagged "shout" bubble outline pointing to the boy (at x=52 in wrapper, tail points there) */}
+                                            <path
+                                                d="M 25 25 L 15 10 L 40 20 L 55 5 L 75 18 L 95 8 L 105 22 L 125 15 L 120 35 L 135 45 L 115 55 L 125 70 L 100 60 L 90 75 L 75 62 L 52 88 L 48 65 L 25 75 L 20 55 L 5 45 L 15 35 Z"
+                                                fill="#ffffff" stroke="#333" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"
+                                            />
+                                            <text x="70" y="42" fontFamily="var(--font-handwriting)" fontSize="14" fontWeight="bold" textAnchor="middle" fill="#e74c3c">
+                                                AKU SAYANG
+                                            </text>
+                                            <text x="70" y="58" fontFamily="var(--font-handwriting)" fontSize="14" fontWeight="bold" textAnchor="middle" fill="#e74c3c">
+                                                REVA!
+                                            </text>
+                                        </svg>
+                                    </div>
 
-                            {/* Globe */}
-                            <div style={{ position: 'absolute', bottom: '0', left: '20px', zIndex: 5 }}>
-                                <svg ref={globeRef} width="100" height="100" viewBox="0 0 100 100">
-                                    <circle cx="50" cy="50" r="45" fill="#a9c9f5" stroke="#333" strokeWidth="2.5" />
-                                    {/* Continents (Hand-drawn style) */}
-                                    <path d="M 20 30 C 40 20, 60 40, 50 50 C 40 60, 20 50, 20 30 Z" fill="#8ed18e" stroke="#333" strokeWidth="1.5" strokeLinejoin="round" />
-                                    <path d="M 60 20 C 80 15, 90 35, 75 45 C 60 55, 50 40, 60 20 Z" fill="#8ed18e" stroke="#333" strokeWidth="1.5" strokeLinejoin="round" />
-                                    <path d="M 30 65 C 50 60, 70 80, 50 90 C 30 100, 20 80, 30 65 Z" fill="#8ed18e" stroke="#333" strokeWidth="1.5" strokeLinejoin="round" />
-                                    <path d="M 75 60 C 90 65, 85 85, 70 80 C 60 75, 65 60, 75 60 Z" fill="#8ed18e" stroke="#333" strokeWidth="1.5" strokeLinejoin="round" />
-                                </svg>
+                                    {/* Globe — large, colored, hand-drawn wobbly edge */}
+                                    <svg
+                                        ref={globeRef}
+                                        width="130"
+                                        height="130"
+                                        viewBox="0 0 100 100"
+                                        style={{ position: 'absolute', left: '10px', bottom: '0' }}
+                                    >
+                                        <path 
+                                            d="M 50 5 C 75 3, 97 22, 95 50 C 93 76, 75 97, 50 95 C 26 93, 3 76, 5 50 C 7 24, 26 7, 50 5 Z" 
+                                            fill="#aed4f7" stroke="#333" strokeWidth="2.5" strokeLinejoin="round" 
+                                        />
+                                        <path d="M 14 32 C 26 18, 46 22, 44 38 C 42 52, 20 54, 12 44 C 8 40, 10 36, 14 32 Z" fill="#7fc47f" stroke="#333" strokeWidth="1.5" strokeLinejoin="round" />
+                                        <path d="M 55 10 C 72 6, 90 18, 84 34 C 78 48, 58 46, 52 32 C 48 22, 48 14, 55 10 Z" fill="#7fc47f" stroke="#333" strokeWidth="1.5" strokeLinejoin="round" />
+                                        <path d="M 26 58 C 42 54, 60 64, 54 80 C 48 94, 26 96, 18 82 C 12 72, 16 62, 26 58 Z" fill="#7fc47f" stroke="#333" strokeWidth="1.5" strokeLinejoin="round" />
+                                        <path d="M 70 55 C 86 58, 92 74, 80 82 C 70 88, 58 78, 60 66 C 61 60, 65 56, 70 55 Z" fill="#7fc47f" stroke="#333" strokeWidth="1.5" strokeLinejoin="round" />
+                                        <path d="M 20 30 Q 35 45, 30 60 M 60 15 Q 68 30, 62 42 M 30 68 Q 45 72, 55 82" fill="none" stroke="#3f7fc7" strokeWidth="1.2" opacity="0.5" />
+                                    </svg>
+
+                                    {/* Couple — shifted up (top: -23px) so their feet (at y=52) rest exactly 
+                                        on the globe's top edge (at y=26.5 relative to the 150x150 wrapper) */}
+                                    <div style={{ position: 'absolute', left: '50%', top: '-23px', transform: 'translateX(-50%)', zIndex: 8 }}>
+                                        <svg width="74" height="52" viewBox="0 0 74 52" style={{ overflow: 'visible' }}>
+                                            {/* Action lines above their heads — surprised/exclaiming */}
+                                            <path d="M 30 4 L 26 -5 M 37 1 L 37 -7 M 44 4 L 48 -5" fill="none" stroke="#f1c40f" strokeWidth="2" strokeLinecap="round" />
+
+                                            <g ref={bodyRef}>
+                                                {/* ── Male figure (left) ── */}
+                                                <circle cx="22" cy="11" r="5.5" fill="none" stroke="#333" strokeWidth="2.2" />
+                                                <line x1="22" y1="16.5" x2="22" y2="34" stroke="#333" strokeWidth="2.2" strokeLinecap="round" />
+                                                {/* free arm (swings) */}
+                                                <line ref={maleFreeArmRef} x1="22" y1="22" x2="22" y2="34" stroke="#333" strokeWidth="2.2" strokeLinecap="round" />
+                                                {/* hand held toward partner (fixed) */}
+                                                <line x1="22" y1="23" x2="34" y2="25" stroke="#333" strokeWidth="2.2" strokeLinecap="round" />
+                                                {/* legs (straight down initially, swung via GSAP) */}
+                                                <line ref={maleOuterLegRef} x1="22" y1="34" x2="22" y2="52" stroke="#333" strokeWidth="2.2" strokeLinecap="round" />
+                                                <line ref={maleInnerLegRef} x1="22" y1="34" x2="22" y2="52" stroke="#333" strokeWidth="2.2" strokeLinecap="round" />
+
+                                                {/* ── Clasped hands — small joining mark so it reads clearly ── */}
+                                                <circle cx="37" cy="25" r="2" fill="#333" />
+
+                                                {/* ── Female figure (right) ── */}
+                                                <circle cx="52" cy="11" r="5.5" fill="none" stroke="#333" strokeWidth="2.2" />
+                                                {/* small hair bow, to distinguish at a glance */}
+                                                <path d="M 52 5.5 L 48 3 L 49 6 L 48 9 Z" fill="#f4a6c1" stroke="#333" strokeWidth="1" strokeLinejoin="round" />
+                                                <path d="M 52 5.5 L 56 3 L 55 6 L 56 9 Z" fill="#f4a6c1" stroke="#333" strokeWidth="1" strokeLinejoin="round" />
+                                                {/* dress-shaped torso instead of a straight line */}
+                                                <path d="M 47 34 L 45.5 16.5 L 58.5 16.5 L 57 34 Z" fill="#f4a6c1" stroke="#333" strokeWidth="2" strokeLinejoin="round" />
+                                                {/* hand held toward partner (fixed) */}
+                                                <line x1="52" y1="23" x2="40" y2="25" stroke="#333" strokeWidth="2.2" strokeLinecap="round" />
+                                                {/* free arm (swings) */}
+                                                <line ref={femaleFreeArmRef} x1="52" y1="22" x2="52" y2="34" stroke="#333" strokeWidth="2.2" strokeLinecap="round" />
+                                                {/* legs peeking out from under the dress (straight down initially, swung via GSAP) */}
+                                                <line ref={femaleInnerLegRef} x1="52" y1="34" x2="52" y2="52" stroke="#333" strokeWidth="2.2" strokeLinecap="round" />
+                                                <line ref={femaleOuterLegRef} x1="52" y1="34" x2="52" y2="52" stroke="#333" strokeWidth="2.2" strokeLinecap="round" />
+                                            </g>
+                                        </svg>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
