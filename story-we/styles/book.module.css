@@ -1,0 +1,1257 @@
+/* ==========================================
+   STORY WE — Book Module Styles
+   ========================================== */
+
+/* Container & Wrapper */
+.bookContainer {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #ffffff !important;
+  perspective: 2500px;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.bookWrapper {
+  position: relative;
+  width: 90vw;
+  max-width: 1000px;
+  height: 85vh;
+  max-height: 800px;
+  transform-style: preserve-3d;
+}
+
+.bookWrapper::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 2%;
+  bottom: 2%;
+  width: 36px;
+  transform: translateX(-50%);
+  z-index: 50;
+  background-image: repeating-linear-gradient(to bottom,
+      transparent,
+      transparent 10px,
+      #d4d4d4 10px,
+      #b8b8b8 14px,
+      #e8e8e8 17px,
+      transparent 17px,
+      transparent 24px);
+  pointer-events: none;
+  filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.15));
+}
+
+.page {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 50%;
+  height: 100%;
+  background-color: #fff;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.05), 2px 5px 15px rgba(0, 0, 0, 0.15);
+  border-radius: 2px 10px 10px 2px;
+  transition: transform 1.2s cubic-bezier(0.645, 0.045, 0.355, 1);
+  backface-visibility: hidden;
+}
+
+.pageLeft {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background-color: #fff;
+  transform-origin: right center;
+  border-radius: 10px 2px 2px 10px;
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.05), -2px 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.linedPage {
+  background-image:
+    repeating-linear-gradient(to bottom,
+      transparent,
+      transparent 31px,
+      #d4e3f5 31px,
+      #d4e3f5 32px);
+  background-position: 0 40px;
+  background-color: #faf9f6;
+}
+
+.pageContent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 3rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  color: #333;
+  overflow: hidden;
+}
+
+.page.flipped {
+  transform: rotateY(-180deg);
+}
+
+.pageLeft.flipped {
+  transform: rotateY(180deg);
+}
+
+.dummyPage {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 50%;
+  height: 100%;
+  background-color: #faf9f6;
+  transform-origin: left center;
+  border-radius: 2px 10px 10px 2px;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.04), 1px 0px 1px rgba(0, 0, 0, 0.08);
+  border-right: 1px solid rgba(0, 0, 0, 0.04);
+  background-image:
+    repeating-linear-gradient(to bottom,
+      transparent,
+      transparent 31px,
+      #d4e3f5 31px,
+      #d4e3f5 32px);
+  background-position: 0 40px;
+}
+
+.coverContainer {
+  background-color: #0c0c0e !important;
+  background-image: none !important;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+  border-radius: 10px 2px 2px 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.coverStars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    radial-gradient(1px 1px at 20px 30px, #fff, rgba(0, 0, 0, 0)),
+    radial-gradient(1px 1px at 40px 70px, #fff, rgba(0, 0, 0, 0)),
+    radial-gradient(1.5px 1.5px at 90px 40px, #fff, rgba(0, 0, 0, 0)),
+    radial-gradient(2px 2px at 160px 120px, #fff, rgba(0, 0, 0, 0)),
+    radial-gradient(1px 1px at 200px 50px, #fff, rgba(0, 0, 0, 0)),
+    radial-gradient(1px 1px at 60px 150px, #ffe4a3, rgba(0, 0, 0, 0)),
+    radial-gradient(1.5px 1.5px at 300px 200px, #fff, rgba(0, 0, 0, 0)),
+    radial-gradient(1px 1px at 250px 90px, #fff, rgba(0, 0, 0, 0));
+  background-size: 250px 250px;
+  opacity: 0.6;
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-size: 3.5rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: var(--accent-color);
+  letter-spacing: -0.02em;
+  z-index: 1;
+}
+
+.openingText {
+  font-family: var(--font-handwriting);
+  font-size: 1.5rem;
+  line-height: 1.8;
+  color: #555;
+  z-index: 1;
+}
+
+.dateField {
+  font-family: var(--font-handwriting);
+  font-size: 1.1rem;
+  color: #999;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.photoStack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: 100%;
+}
+
+.photoWrap {
+  flex: 1;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  position: relative;
+}
+
+.photoImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.7s ease;
+}
+
+.photoWrap:hover .photoImg {
+  transform: scale(1.03);
+}
+
+.contentSpread {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.contentPageLeft {
+  width: 50%;
+  height: 100%;
+  position: relative;
+  border-radius: 10px 0 0 10px;
+  overflow: hidden;
+}
+
+.contentPageRight {
+  width: 50%;
+  height: 100%;
+  position: relative;
+  border-radius: 0 10px 10px 0;
+  overflow: hidden;
+}
+
+.contentPageInner {
+  width: 100%;
+  height: 100%;
+  padding: 2.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  background-color: #faf9f6;
+  background-image:
+    repeating-linear-gradient(to bottom,
+      transparent,
+      transparent 31px,
+      #d4e3f5 31px,
+      #d4e3f5 32px);
+  background-position: 0 40px;
+  overflow-y: auto;
+}
+
+.fullPagePhoto {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.contentText {
+  flex: 1;
+  font-family: var(--font-handwriting);
+  font-size: 1.4rem;
+  line-height: 2;
+  color: #333;
+  position: relative;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.penIcon {
+  display: inline-block;
+  vertical-align: text-bottom;
+  margin-left: 2px;
+  margin-bottom: 2px;
+  animation: writePen 0.15s infinite alternate;
+}
+
+@keyframes writePen {
+  0% {
+    transform: translate(0px, 0px) rotate(0deg);
+  }
+
+  100% {
+    transform: translate(3px, -3px) rotate(-15deg);
+  }
+}
+
+.clickButton {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: auto;
+  padding: 0;
+  border: none;
+  transform: rotate(5deg) scale(0.5);
+  transform-origin: center;
+  font-family: var(--font-handwriting), cursive;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  padding-bottom: 3px;
+  border-radius: 5px;
+  box-shadow: 0 2px 0 #494a4b;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  background-color: #5cdb95;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.clickButton span {
+  background: #f1f5f8;
+  display: block;
+  padding: 0.3rem 0.6rem;
+  border-radius: 5px;
+  border: 2px solid #494a4b;
+  color: #494a4b;
+  white-space: nowrap;
+}
+
+.clickButton.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: rotate(-3deg) scale(1);
+}
+
+.clickButton.visible:hover {
+  transform: rotate(0deg) scale(1.05);
+}
+
+.clickButton:active {
+  transform: translateY(3px) rotate(0deg) !important;
+  padding-bottom: 0px;
+  outline: 0;
+}
+
+.cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.2em;
+  background-color: #e8729a;
+  vertical-align: middle;
+  margin-left: 2px;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}
+
+.navOverlay {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 1rem;
+  z-index: 200;
+  opacity: 0.7;
+  transition: opacity 0.3s;
+  pointer-events: auto;
+}
+
+.navOverlay:hover {
+  opacity: 1;
+}
+
+.navBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.pageCounter {
+  color: rgba(255, 255, 255, 0.5);
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+}
+
+.navBtnWrapperLeft {
+  position: absolute;
+  top: 50%;
+  left: 2rem;
+  transform: translateY(-50%);
+  z-index: 1000;
+}
+
+.navBtnWrapperRight {
+  position: absolute;
+  top: 50%;
+  right: 2rem;
+  transform: translateY(-50%);
+  z-index: 1000;
+}
+
+.introUI {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
+  background-color: #ffd1dc !important;
+  /* Soft Pink */
+}
+
+.signatureSvg {
+  width: 60%;
+  max-width: 600px;
+  height: auto;
+  overflow: visible;
+  stroke: var(--accent-color);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.audioOptions {
+  margin-top: 4rem;
+  display: flex;
+  gap: 2rem;
+  opacity: 0;
+}
+
+.audioBtn {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  border-radius: 30px;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.audioBtn:hover {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+@media (max-width: 768px) {
+  .bookWrapper {
+    width: 100vw;
+    height: 85vh;
+  }
+
+  .pageLeft,
+  .contentPageLeft {
+    display: none !important;
+  }
+
+  .page,
+  .dummyPage,
+  .contentPageRight {
+    width: 85% !important;
+    left: 10% !important;
+    border-radius: 10px !important;
+    border-left: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .bookWrapper::after {
+    left: 10% !important;
+    width: 20px !important;
+  }
+
+  .pageContent {
+    padding: 2rem 1.5rem;
+  }
+
+  .contentPageInner {
+    padding: 1.5rem 1rem;
+  }
+
+  .contentText {
+    font-size: 1.1rem;
+    line-height: 1.8;
+  }
+
+  .title {
+    font-size: 2.5rem;
+  }
+
+  .audioOptions {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .navBtnWrapperLeft {
+    top: auto;
+    bottom: 5%;
+    left: 4%;
+    transform: none;
+  }
+
+  .navBtnWrapperRight {
+    top: auto;
+    bottom: 5%;
+    left: auto;
+    right: 4%;
+    transform: none;
+  }
+
+  .navBtn {
+    width: 42vw;
+    height: 3rem;
+    font-size: 1rem;
+  }
+
+  .navBtnInner {
+    width: 2.5rem;
+    height: 2.5rem;
+    top: 3px;
+  }
+
+  .navBtn:hover .navBtnInner,
+  .navBtnNext:hover .navBtnInner {
+    width: calc(42vw - 8px);
+  }
+
+  .navBtnText {
+    font-size: 0.9rem;
+  }
+}
+
+.coverArt {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* ==========================================
+   Scene 1 — Spinning 3D Book (CSS only)
+   ========================================== */
+
+.spinWrapper {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.bg {
+  position: absolute;
+  background: url('https://s3-ap-southeast-2.amazonaws.com/mephystoprojects/alice/alice-back.jpg') no-repeat;
+  background-size: cover;
+  filter: blur(15px);
+  width: 100vw;
+  height: 100vh;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+.container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  perspective: 1200px;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0) 75%) center center;
+  background-size: contain;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2;
+}
+
+.boxHolder {
+  --box-width: 200px;
+  --box-height: 300px;
+  --box-depth: 16px;
+  transform: rotateY(10deg) rotateX(16deg);
+  transform-style: preserve-3d;
+  cursor: pointer;
+}
+
+.boxHolder>div {
+  position: absolute;
+  top: 0;
+  left: 0;
+  backface-visibility: hidden;
+}
+
+.boxFront {
+  width: var(--box-width);
+  height: var(--box-height);
+  background: url('https://s3-ap-southeast-2.amazonaws.com/mephystoprojects/alice/alice-cover.jpg') no-repeat center right;
+  background-size: auto 100%;
+  transform: translate3d(calc(var(--box-width) * -0.5), calc(var(--box-height) * -0.5), 0) rotateY(0deg);
+  backface-visibility: visible !important;
+}
+
+.boxPage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--box-width);
+  height: var(--box-height);
+  background-color: #faf9f6;
+  background-image: repeating-linear-gradient(to bottom, transparent, transparent 31px, #d4e3f5 31px, #d4e3f5 32px);
+  background-position: 0 40px;
+  backface-visibility: visible !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.boxBack {
+  width: var(--box-width);
+  height: var(--box-height);
+  background: url('https://s3-ap-southeast-2.amazonaws.com/mephystoprojects/alice/alice-cover.jpg') no-repeat center left;
+  background-size: auto 100%;
+  transform: translate3d(calc(var(--box-width) * -0.5), calc(var(--box-height) * -0.5), calc(var(--box-depth) * -1)) rotateY(180deg);
+}
+
+.boxSideLeft {
+  width: var(--box-depth);
+  height: var(--box-height);
+  background: url('https://s3-ap-southeast-2.amazonaws.com/mephystoprojects/alice/alice-cover.jpg') no-repeat center center;
+  background-size: auto 100%;
+  transform: translate3d(calc(var(--box-width) * -0.5 - var(--box-depth) * 0.5), calc(var(--box-height) * -0.5), calc(var(--box-depth) * -0.5)) rotateY(-90deg);
+}
+
+.boxSideRight {
+  width: var(--box-depth);
+  height: var(--box-height);
+  background: url('https://s3-ap-southeast-2.amazonaws.com/mephystoprojects/alice/paper.jpg') no-repeat center center;
+  background-size: cover;
+  transform: translate3d(calc(var(--box-width) * 0.5 - var(--box-depth) * 0.5), calc(var(--box-height) * -0.5), calc(var(--box-depth) * -0.5)) rotateY(90deg);
+}
+
+.boxTop {
+  width: var(--box-width);
+  height: var(--box-depth);
+  background: url('https://s3-ap-southeast-2.amazonaws.com/mephystoprojects/alice/paper-horizontal.jpg') no-repeat center center;
+  background-size: cover;
+  transform: translate3d(calc(var(--box-width) * -0.5), calc(var(--box-height) * -0.5 - var(--box-depth) * 0.5), calc(var(--box-depth) * 0.5)) rotateX(90deg);
+}
+
+.boxBottom {
+  width: var(--box-width);
+  height: var(--box-depth);
+  background: url('https://s3-ap-southeast-2.amazonaws.com/mephystoprojects/alice/paper-horizontal.jpg') no-repeat center center;
+  background-size: cover;
+  transform: translate3d(calc(var(--box-width) * -0.5), calc(var(--box-height) * 0.5 - var(--box-depth) * 0.5), calc(var(--box-depth) * -0.5)) rotateX(-90deg);
+}
+
+/* Custom Pagination Buttons */
+.navBtn {
+  background-color: #ffffff;
+  text-align: center;
+  width: 12rem;
+  border-radius: 1rem;
+  height: 3.5rem;
+  position: relative;
+  color: #000000;
+  font-size: 1.25rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: opacity 0.3s ease;
+  font-family: var(--font-sans);
+}
+
+.navBtnInner {
+  background-color: #4ade80;
+  border-radius: 0.75rem;
+  height: 3rem;
+  width: 25%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  left: 0.25rem;
+  top: 4px;
+  z-index: 10;
+  transition: all 500ms ease;
+}
+
+.navBtn:hover .navBtnInner {
+  width: 184px;
+}
+
+.navBtnNext .navBtnInner {
+  left: auto;
+  right: 0.25rem;
+}
+
+.navBtnNext:hover .navBtnInner {
+  width: 184px;
+}
+
+.navBtnText {
+  transform: translateX(0.5rem);
+  margin: 0;
+  position: relative;
+  z-index: 5;
+  transition: transform 500ms ease;
+}
+
+.navBtnNext .navBtnText {
+  transform: translateX(-0.5rem);
+}
+
+/* Scene 3 Cake Page Buttons (WhatsApp UI style) */
+.waMicBtn {
+  background-color: #00a884;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.waMicBtn:hover {
+  background-color: #008f6f;
+  transform: scale(1.05);
+}
+
+.waRecordingContainer {
+  display: flex;
+  align-items: center;
+  background-color: #f0f2f5;
+  padding: 8px 16px;
+  border-radius: 30px;
+  margin-top: 1.5rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  gap: 12px;
+}
+
+.waBlinkingDot {
+  width: 10px;
+  height: 10px;
+  background-color: #e74c3c;
+  border-radius: 50%;
+  animation: pulse 1s infinite;
+}
+
+.waTimer {
+  font-family: var(--font-sans), monospace;
+  font-size: 1rem;
+  color: #54656f;
+  min-width: 48px;
+}
+
+.waStopBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.waStopBtn:hover {
+  background-color: #e9edef;
+}
+
+.waSendBtn {
+  background-color: #00a884;
+  color: white;
+  border: none;
+  border-radius: 24px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  font-family: var(--font-sans);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.waSendBtn:hover {
+  background-color: #008f6f;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7);
+  }
+
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(231, 76, 60, 0);
+  }
+
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(231, 76, 60, 0);
+  }
+}
+
+/* --- Animated Intro Buttons --- */
+.btnContainer {
+  --btn-color: #d8ff7c;
+  --corner-color: #0002;
+  --corner-dist: 24px;
+  --corner-multiplier: 1.5;
+  --timing-function: cubic-bezier(0, 0, 0, 2.5);
+  --duration: 250ms;
+
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 1rem;
+}
+
+.btnAnim {
+  position: relative;
+  min-width: 160px;
+  min-height: calc(var(--corner-dist) * 2);
+  border-radius: 16px;
+  border: none;
+  padding: 0.25em 1em;
+
+  background: linear-gradient(#fff2, #0001), var(--btn-color);
+  box-shadow:
+    1px 1px 2px -1px #fff inset,
+    0 2px 1px #00000010,
+    0 4px 2px #00000010,
+    0 8px 4px #00000010,
+    0 16px 8px #00000010,
+    0 32px 16px #00000010;
+
+  transition:
+    transform var(--duration) var(--timing-function),
+    filter var(--duration) var(--timing-function);
+  -webkit-transition:
+    transform var(--duration) var(--timing-function),
+    -webkit-filter var(--duration) var(--timing-function);
+
+  cursor: pointer;
+  z-index: 2;
+}
+
+.btnDrawer {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 32px;
+  border-radius: 16px;
+  border: none;
+  padding: 0.25em 1em;
+  font-size: 0.8em;
+  font-weight: 600;
+  font-family: var(--font-sans), monospace;
+  color: #0009;
+
+  background-color: #fbff13;
+  opacity: 0;
+
+  transition:
+    transform calc(0.5 * var(--duration)) ease,
+    filter var(--duration) var(--timing-function),
+    opacity calc(0.5 * var(--duration)) ease;
+  -webkit-transition:
+    transform calc(0.5 * var(--duration)) ease,
+    -webkit-filter var(--duration) var(--timing-function),
+    opacity calc(0.5 * var(--duration)) ease;
+  filter: blur(2px);
+  -webkit-filter: blur(2px);
+  z-index: 1;
+}
+
+.transitionTop {
+  top: 0;
+  left: 0;
+  border-radius: 12px 12px 0 0;
+  align-items: flex-start;
+}
+
+.transitionBottom {
+  bottom: 0;
+  right: 0;
+  border-radius: 0 0 12px 12px;
+  align-items: flex-end;
+}
+
+.btnText {
+  display: inline-block;
+
+  font-size: 1.25em;
+  font-family: var(--font-sans), sans-serif;
+  font-weight: 600;
+  color: #5550;
+
+  background-image: linear-gradient(#444, #000a);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 1px 0 #fff6) drop-shadow(0 -1px 0 #0006);
+  -webkit-filter: drop-shadow(0 1px 0 #fff6) drop-shadow(0 -1px 0 #0006);
+
+  transition:
+    transform var(--duration) var(--timing-function),
+    filter var(--duration) var(--timing-function),
+    color var(--duration) var(--timing-function);
+  -webkit-transition:
+    transform var(--duration) var(--timing-function),
+    -webkit-filter var(--duration) var(--timing-function),
+    color var(--duration) var(--timing-function);
+}
+
+.btnCorner {
+  position: absolute;
+  width: 32px;
+  fill: none;
+  stroke: var(--corner-color);
+  transition:
+    transform var(--duration) var(--timing-function),
+    filter var(--duration) var(--timing-function);
+  -webkit-transition:
+    transform var(--duration) var(--timing-function),
+    -webkit-filter var(--duration) var(--timing-function);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.btnCorner:nth-of-type(1) {
+  top: 0;
+  left: 0;
+  transform: translate(calc(-1 * var(--corner-dist)), calc(-1 * var(--corner-dist))) rotate(90deg);
+}
+
+.btnCorner:nth-of-type(2) {
+  top: 0;
+  right: 0;
+  transform: translate(var(--corner-dist), calc(-1 * var(--corner-dist))) rotate(180deg);
+}
+
+.btnCorner:nth-of-type(3) {
+  bottom: 0;
+  right: 0;
+  transform: translate(var(--corner-dist), var(--corner-dist)) rotate(-90deg);
+}
+
+.btnCorner:nth-of-type(4) {
+  bottom: 0;
+  left: 0;
+  transform: translate(calc(-1 * var(--corner-dist)), var(--corner-dist)) rotate(0deg);
+}
+
+/* Hover effects */
+.btnContainer:hover .btnAnim,
+.btnContainer:focus-within .btnAnim {
+  transform: scale(1.05);
+  filter: drop-shadow(0 16px 16px #0002);
+  -webkit-filter: drop-shadow(0 16px 16px #0002);
+}
+
+.btnContainer:hover .transitionTop,
+.btnContainer:focus-within .transitionTop {
+  transform: translateY(-24px) rotateZ(4deg);
+  filter: blur(0px);
+  -webkit-filter: blur(0px);
+  animation: hue-anim 3s infinite linear;
+  -webkit-animation: hue-anim 3s infinite linear;
+  opacity: 1;
+}
+
+.btnContainer:hover .transitionBottom,
+.btnContainer:focus-within .transitionBottom {
+  transform: translateY(24px) rotateZ(4deg);
+  filter: blur(0px);
+  -webkit-filter: blur(0px);
+  animation: hue-anim 3s infinite linear;
+  -webkit-animation: hue-anim 3s infinite linear;
+  opacity: 1;
+}
+
+.btnContainer:hover .btnText,
+.btnContainer:focus-within .btnText {
+  filter: drop-shadow(0 1px 0 #fff6) drop-shadow(0 -1px 0 #0006) drop-shadow(0px 6px 2px #0003);
+  -webkit-filter: drop-shadow(0 1px 0 #fff6) drop-shadow(0 -1px 0 #0006) drop-shadow(0px 6px 2px #0003);
+  transform: scale(1.05);
+  color: #0008;
+}
+
+.btnContainer:hover {
+  --corner-color: #0004;
+}
+
+.btnContainer:hover .btnCorner:nth-of-type(1),
+.btnContainer:focus-within .btnCorner:nth-of-type(1) {
+  transform: translate(calc(-1 * var(--corner-multiplier) * var(--corner-dist)), calc(-1 * var(--corner-multiplier) * var(--corner-dist))) rotate(90deg);
+  filter: drop-shadow(-10px 10px 1px var(--corner-color)) drop-shadow(-20px 20px 2px var(--corner-color));
+  -webkit-filter: drop-shadow(-10px 10px 1px var(--corner-color)) drop-shadow(-20px 20px 2px var(--corner-color));
+}
+
+.btnContainer:hover .btnCorner:nth-of-type(2),
+.btnContainer:focus-within .btnCorner:nth-of-type(2) {
+  transform: translate(calc(var(--corner-multiplier) * var(--corner-dist)), calc(-1 * var(--corner-multiplier) * var(--corner-dist))) rotate(180deg);
+  filter: drop-shadow(-10px 10px 1px var(--corner-color)) drop-shadow(-20px 20px 2px var(--corner-color));
+  -webkit-filter: drop-shadow(-10px 10px 1px var(--corner-color)) drop-shadow(-20px 20px 2px var(--corner-color));
+}
+
+.btnContainer:hover .btnCorner:nth-of-type(3),
+.btnContainer:focus-within .btnCorner:nth-of-type(3) {
+  transform: translate(calc(var(--corner-multiplier) * var(--corner-dist)), calc(var(--corner-multiplier) * var(--corner-dist))) rotate(-90deg);
+  filter: drop-shadow(-10px 10px 1px var(--corner-color)) drop-shadow(-20px 20px 2px var(--corner-color));
+  -webkit-filter: drop-shadow(-10px 10px 1px var(--corner-color)) drop-shadow(-20px 20px 2px var(--corner-color));
+}
+
+.btnContainer:hover .btnCorner:nth-of-type(4),
+.btnContainer:focus-within .btnCorner:nth-of-type(4) {
+  transform: translate(calc(-1 * var(--corner-multiplier) * var(--corner-dist)), calc(var(--corner-multiplier) * var(--corner-dist))) rotate(0deg);
+  filter: drop-shadow(-10px 10px 1px var(--corner-color)) drop-shadow(-20px 20px 2px var(--corner-color));
+  -webkit-filter: drop-shadow(-10px 10px 1px var(--corner-color)) drop-shadow(-20px 20px 2px var(--corner-color));
+}
+
+/* Active effects */
+.btnContainer:active .btnAnim {
+  transform: scale(0.95);
+  filter: drop-shadow(0 10px 4px #0002);
+  -webkit-filter: drop-shadow(0 10px 4px #0002);
+}
+
+.btnContainer:active .transitionTop,
+.btnContainer:active .transitionBottom {
+  transform: translateY(0px) scale(0.5);
+}
+
+.btnContainer:active .btnText {
+  filter: drop-shadow(0 1px 0 #fff6) drop-shadow(0 -1px 0 #0006) drop-shadow(0px 6px 2px #0003);
+  -webkit-filter: drop-shadow(0 1px 0 #fff6) drop-shadow(0 -1px 0 #0006) drop-shadow(0px 6px 2px #0003);
+  transform: scale(1);
+  color: #000a;
+}
+
+.btnContainer:active {
+  --corner-color: #0005;
+  --corner-multiplier: 0.95;
+}
+
+.btnContainer:active .btnCorner:nth-of-type(1) {
+  transform: translate(calc(-1 * var(--corner-multiplier) * var(--corner-dist)), calc(-1 * var(--corner-multiplier) * var(--corner-dist))) rotate(90deg);
+  filter: drop-shadow(-10px 10px 2px var(--corner-color)) drop-shadow(-20px 20px 3px var(--corner-color));
+  -webkit-filter: drop-shadow(-10px 10px 2px var(--corner-color)) drop-shadow(-20px 20px 3px var(--corner-color));
+}
+
+.btnContainer:active .btnCorner:nth-of-type(2) {
+  transform: translate(calc(var(--corner-multiplier) * var(--corner-dist)), calc(-1 * var(--corner-multiplier) * var(--corner-dist))) rotate(180deg);
+  filter: drop-shadow(-10px 10px 2px var(--corner-color)) drop-shadow(-20px 20px 3px var(--corner-color));
+  -webkit-filter: drop-shadow(-10px 10px 2px var(--corner-color)) drop-shadow(-20px 20px 3px var(--corner-color));
+}
+
+.btnContainer:active .btnCorner:nth-of-type(3) {
+  transform: translate(calc(var(--corner-multiplier) * var(--corner-dist)), calc(var(--corner-multiplier) * var(--corner-dist))) rotate(-90deg);
+  filter: drop-shadow(-10px 10px 2px var(--corner-color)) drop-shadow(-20px 20px 3px var(--corner-color));
+  -webkit-filter: drop-shadow(-10px 10px 2px var(--corner-color)) drop-shadow(-20px 20px 3px var(--corner-color));
+}
+
+.btnContainer:active .btnCorner:nth-of-type(4) {
+  transform: translate(calc(-1 * var(--corner-multiplier) * var(--corner-dist)), calc(var(--corner-multiplier) * var(--corner-dist))) rotate(0deg);
+  filter: drop-shadow(-10px 10px 2px var(--corner-color)) drop-shadow(-20px 20px 3px var(--corner-color));
+  -webkit-filter: drop-shadow(-10px 10px 2px var(--corner-color)) drop-shadow(-20px 20px 3px var(--corner-color));
+}
+
+@keyframes hue-anim {
+
+  0%,
+  100% {
+    filter: hue-rotate(0deg);
+    -webkit-filter: hue-rotate(0deg);
+  }
+
+  50% {
+    filter: hue-rotate(-70deg);
+    -webkit-filter: hue-rotate(-70deg);
+  }
+}
+
+@-webkit-keyframes hue-anim {
+
+  0%,
+  100% {
+    -webkit-filter: hue-rotate(0deg);
+  }
+
+  50% {
+    -webkit-filter: hue-rotate(-70deg);
+  }
+}
+
+/* ── Circled word highlight ─────────────────────────────────────────── */
+.circledWord {
+  position: relative;
+  display: inline-block;
+  z-index: 1;
+  padding: 0 4px;
+}
+
+.circledWord::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -6px;
+  right: -6px;
+  bottom: -2px;
+  border: 2.5px solid var(--circle-color, #e74c3c);
+  border-radius: 50% 40% 50% 40% / 40% 50% 40% 50%;
+  transform: rotate(-2deg);
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.85;
+  animation: choppyWiggle 1.2s infinite steps(4, end);
+}
+
+@keyframes choppyWiggle {
+  0% {
+    transform: rotate(-2deg) scale(1);
+  }
+
+  25% {
+    transform: rotate(1.5deg) scale(1.03) translate(1px, -1px);
+  }
+
+  50% {
+    transform: rotate(-1deg) scale(0.97) translate(-1px, 1px);
+  }
+
+  75% {
+    transform: rotate(2deg) scale(1.01) translate(0px, -1px);
+  }
+
+  100% {
+    transform: rotate(-2deg) scale(1);
+  }
+}
+
+/* ── Dashed red circle around text block (Scene 5) ───────────────── */
+.dashedCircleWrap {
+  position: relative;
+  display: inline-block;
+  padding: 1rem 1.5rem;
+}
+
+.dashedCircleWrap::after {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: -12px;
+  right: -12px;
+  bottom: -8px;
+  border: 2.5px dashed #e74c3c;
+  border-radius: 55% 45% 50% 50% / 45% 55% 45% 55%;
+  transform: rotate(-1deg);
+  pointer-events: none;
+  opacity: 0.85;
+  animation: dashedPulse 3s ease-in-out infinite;
+}
+
+@keyframes dashedPulse {
+
+  0%,
+  100% {
+    transform: rotate(-1deg) scale(1);
+  }
+
+  50% {
+    transform: rotate(1deg) scale(1.02);
+  }
+}
+
+/* ==========================================
+   Scene 5 — Flower idle spin (pure CSS, no JS conflicts)
+   ========================================== */
+
+@keyframes flowerSpin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.flowerSpinWrap {
+  animation-name: flowerSpin;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  transform-origin: center center;
+}
+
+/* ── Letter page (typewriter) — right-aligned lines & next arrow ─── */
+.textRight {
+  text-align: right;
+}
+
+.nextArrowBtn {
+  align-self: flex-end;
+  margin-top: 1.5rem;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #fff;
+  color: #e8729a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+  transition: opacity 0.6s ease, transform 0.6s ease, border-color 0.3s ease;
+}
+
+.nextArrowBtnVisible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.nextArrowBtn:hover {
+  border-color: #e8729a;
+}
