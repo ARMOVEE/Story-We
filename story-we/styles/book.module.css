@@ -843,6 +843,31 @@
   margin: 0 1rem;
 }
 
+.btnGifPreview {
+  position: absolute;
+  bottom: calc(100% + 14px);
+  left: 50%;
+  transform: translate(-50%, 10px) scale(0.92);
+  opacity: 0;
+  pointer-events: none;
+  width: 160px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+  transition:
+    transform var(--duration) ease,
+    opacity var(--duration) ease;
+  -webkit-transition:
+    transform var(--duration) ease,
+    opacity var(--duration) ease;
+}
+
+.btnContainer:hover .btnGifPreview,
+.btnContainer:focus-within .btnGifPreview {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
 .btnAnim {
   position: relative;
   min-width: 160px;
@@ -1643,4 +1668,31 @@
     filter: url(#pzHandDrawnNoiseT);
     translate: 0 -1px;
   }
+}
+
+/* ==========================================
+   Scene 1 — GIF preview muncul di atas tombol saat hover
+   ========================================== */
+
+.btnGifPreview {
+  position: absolute;
+  bottom: calc(100% + 14px);
+  left: 50%;
+  transform: translate(-50%, 10px) scale(0.92);
+  width: 160px;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--duration, 250ms) ease,
+    transform var(--duration, 250ms) var(--timing-function, ease);
+  z-index: 20;
+}
+
+.btnContainer:hover .btnGifPreview,
+.btnContainer:focus-within .btnGifPreview {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
 }

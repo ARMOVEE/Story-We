@@ -11,23 +11,74 @@ interface Scene3CakePageProps {
 
 type Stage = 'reading' | 'place_candle' | 'candle_placed' | 'recording' | 'sending' | 'wish_granted';
 
-export default function Scene3CakePage({ onNext, onPrev }: Scene3CakePageProps) {
-    const pageRef           = useRef<HTMLDivElement>(null);
-    const textBlockRef      = useRef<HTMLDivElement>(null);
-    const cakeRef           = useRef<HTMLDivElement>(null);
-    const wishTextRef       = useRef<HTMLDivElement>(null);
-    const hintRef           = useRef<HTMLDivElement>(null);
+const MAX_CANDLES = 3;
+// Ukuran logis .html-cake sebelum di-scale lewat CSS transform (lihat style di bawah)
+const CAKE_LOGICAL_WIDTH = 250;
 
-    const [stage, setStage]               = useState<Stage>('reading');
-    const [candlePlaced, setCandlePlaced] = useState(false);
-    const [flameOut, setFlameOut]         = useState(false);
-    const [isRecording, setIsRecording]   = useState(false);
-    const [audioBlob, setAudioBlob]       = useState<Blob | null>(null);
-    const [recordSecs, setRecordSecs]     = useState(0);
+// Batas area kue tempat lilin boleh ditaruh, biar lilin selalu keliatan
+// nempel wajar di atas kue (nggak nyasar ke tepi/luar kue).
+const CANDLE_AREA = { minX: 25, maxX: 225, minY: 5, maxY: 70 };
+
+interface CandlePos { x: number; y: number; }
+
+interface AnimatedActionButtonProps {
+    label: string;
+    onClick?: () => void;
+    icon?: React.ReactNode;
+    /** Warna aksen tombol — dipakai untuk background pill & warna teks saat overlay putihnya keliatan */
+    accentColor: string;
+    disabled?: boolean;
+}
+
+// Tombol dengan efek "btn-53": overlay putih nutupin tombol dalam kondisi
+// normal, lalu meleleh turun (translateY 100%) pas di-hover, membuka
+// background warna aksen dengan label yang muncul huruf per huruf secara
+// bergelombang (naik-turun berselang-seling, dengan delay bertahap).
+function AnimatedActionButton({ label, onClick, icon, accentColor, disabled }: AnimatedActionButtonProps) {
+    return (
+        <button
+            type="button"
+            className="btn-53"
+            onClick={onClick}
+            disabled={disabled}
+            style={{ ['--btn53-accent' as string]: accentColor } as React.CSSProperties}
+        >
+            <div className="original">
+                {icon}
+                <span style={{ marginLeft: icon ? '8px' : 0 }}>{label}</span>
+            </div>
+            <div className="letters">
+                {Array.from(label).map((ch, i) => (
+                    <span key={i} style={{ transitionDelay: `${i * 0.04}s` }}>
+                        {ch === ' ' ? '\u00A0' : ch}
+                    </span>
+                ))}
+            </div>
+        </button>
+    );
+}
+
+export default function Scene3CakePage({ onNext, onPrev }: Scene3CakePageProps) {
+    const pageRef = useRef<HTMLDivElement>(null);
+    const textBlockRef = useRef<HTMLDivElement>(null);
+    const cakeRef = useRef<HTMLDivElement>(null);
+    const wishTextRef = useRef<HTMLDivElement>(null);
+    const hintRef = useRef<HTMLDivElement>(null);
+
+    const [stage, setStage] = useState<Stage>('reading');
+    // Setiap klik nambah satu posisi lilin baru, sesuai titik klik kursor.
+    const [candlePositions, setCandlePositions] = useState<CandlePos[]>([]);
+    const [flameOut, setFlameOut] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+    const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+    const [recordSecs, setRecordSecs] = useState(0);
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-    const chunksRef        = useRef<BlobPart[]>([]);
-    const timerRef         = useRef<ReturnType<typeof setInterval> | null>(null);
+    const chunksRef = useRef<BlobPart[]>([]);
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    const candlePlaced = candlePositions.length > 0;
+    const allCandlesPlaced = candlePositions.length >= MAX_CANDLES;
 
     // Animate text in on mount
     useEffect(() => {
@@ -50,16 +101,35 @@ export default function Scene3CakePage({ onNext, onPrev }: Scene3CakePageProps) 
         return () => { tl.kill(); };
     }, []);
 
-    // Place candles on cake click
+    // Taruh satu lilin di titik klik kursor. Klik pertama, kedua, ketiga
+    // masing-masing nambah satu lilin baru — bukan langsung muncul 3 sekaligus.
     const handleCakeClick = (e: React.MouseEvent<HTMLDivElement>) => {
         if (stage !== 'reading' && stage !== 'place_candle') return;
-        
-        setCandlePlaced(true);
-        setStage('candle_placed');
-        
-        if (hintRef.current) {
-            gsap.to(hintRef.current, { opacity: 0, duration: 0.3 });
-        }
+        if (allCandlesPlaced) return;
+
+        const rect = e.currentTarget.getBoundingClientRect();
+        // .html-cake di-scale lewat CSS transform (scale(0.9)), jadi konversi
+        // koordinat klik (visual, sudah ke-scale) balik ke koordinat logis 250px
+        // supaya posisi lilin akurat menempel di titik yang benar-benar diklik.
+        const scale = rect.width / CAKE_LOGICAL_WIDTH;
+        const rawX = (e.clientX - rect.left) / scale;
+        const rawY = (e.clientY - rect.top) / scale;
+
+        const x = Math.min(Math.max(rawX, CANDLE_AREA.minX), CANDLE_AREA.maxX);
+        const y = Math.min(Math.max(rawY, CANDLE_AREA.minY), CANDLE_AREA.maxY);
+
+        setCandlePositions(prev => {
+            const next = [...prev, { x, y }];
+            if (next.length >= MAX_CANDLES) {
+                setStage('candle_placed');
+                if (hintRef.current) {
+                    gsap.to(hintRef.current, { opacity: 0, duration: 0.3 });
+                }
+            } else {
+                setStage('place_candle');
+            }
+            return next;
+        });
     };
 
     // Start recording
@@ -172,7 +242,7 @@ export default function Scene3CakePage({ onNext, onPrev }: Scene3CakePageProps) 
                         </div>
                         <div ref={textBlockRef} style={{ fontFamily: 'var(--font-handwriting)', fontSize: '1.3rem', color: '#444', lineHeight: 2.2, paddingLeft: '1rem' }}>
                             <div style={{ marginBottom: '1rem' }}>Make a wish sayang</div>
-                            <div style={{ marginBottom: '1rem' }}>Semoga segala doa dan<br/>harapan kamu terkabul<br/>ditahun ini ya sayang</div>
+                            <div style={{ marginBottom: '1rem' }}>Semoga segala doa dan<br />harapan kamu terkabul<br />ditahun ini ya sayang</div>
                             <div>Aamiinn ....</div>
                         </div>
                     </div>
@@ -193,14 +263,14 @@ export default function Scene3CakePage({ onNext, onPrev }: Scene3CakePageProps) 
 
                         {/* Cake illustration area */}
                         <div style={{ width: '100%', display: 'flex', justifyContent: 'center', position: 'relative', height: '220px' }}>
-                            
-                            <div 
-                                className="html-cake" 
-                                ref={cakeRef} 
-                                onClick={handleCakeClick} 
-                                style={{ 
-                                    cursor: stage === 'reading' || stage === 'place_candle' ? 'pointer' : 'default', 
-                                    userSelect: 'none' 
+
+                            <div
+                                className="html-cake"
+                                ref={cakeRef}
+                                onClick={handleCakeClick}
+                                style={{
+                                    cursor: (stage === 'reading' || stage === 'place_candle') && !allCandlesPlaced ? 'pointer' : 'default',
+                                    userSelect: 'none'
                                 }}
                             >
                                 <div className="plate"></div>
@@ -211,30 +281,26 @@ export default function Scene3CakePage({ onNext, onPrev }: Scene3CakePageProps) 
                                 <div className="drip drip1"></div>
                                 <div className="drip drip2"></div>
                                 <div className="drip drip3"></div>
-                                
-                                {candlePlaced && (
-                                    <>
-                                        {/* Candle 1 (Left) */}
-                                        <div className={`candle ${flameOut ? 'out' : ''}`} style={{ left: '80px', top: '15px' }}>
-                                            <div className="flame"></div>
-                                        </div>
-                                        {/* Candle 2 (Center) */}
-                                        <div className={`candle ${flameOut ? 'out' : ''}`} style={{ left: '125px', top: '35px' }}>
-                                            <div className="flame"></div>
-                                        </div>
-                                        {/* Candle 3 (Right) */}
-                                        <div className={`candle ${flameOut ? 'out' : ''}`} style={{ left: '170px', top: '15px' }}>
-                                            <div className="flame"></div>
-                                        </div>
-                                    </>
-                                )}
+
+                                {/* Lilin ditaruh satu-satu, persis di titik klik kursor */}
+                                {candlePositions.map((pos, i) => (
+                                    <div
+                                        key={i}
+                                        className={`candle ${flameOut ? 'out' : ''}`}
+                                        style={{ left: `${pos.x}px`, top: `${pos.y}px` }}
+                                    >
+                                        <div className="flame"></div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
-                        {/* Hint text */}
-                        {!candlePlaced && (
+                        {/* Hint text — nunjukin progress berapa lilin yang udah ditaruh */}
+                        {!allCandlesPlaced && (
                             <div ref={hintRef} style={{ fontFamily: 'var(--font-handwriting)', fontSize: '1.1rem', color: '#888', textAlign: 'center', marginTop: '1rem', animation: 'pulse 2s infinite' }}>
-                                👆 Pencet kuenya untuk taruh lilin!
+                                {candlePlaced
+                                    ? `👆 Pencet lagi buat taruh lilin (${candlePositions.length}/${MAX_CANDLES})`
+                                    : `👆 Pencet kuenya untuk taruh lilin! (0/${MAX_CANDLES})`}
                             </div>
                         )}
 
@@ -245,20 +311,18 @@ export default function Scene3CakePage({ onNext, onPrev }: Scene3CakePageProps) 
                                     <div style={{ fontFamily: 'var(--font-handwriting)', fontSize: '1rem', color: '#777' }}>
                                         Klik untuk ucapkan doa
                                     </div>
-                                    <button onClick={startRecording} style={{
-                                        fontFamily: 'var(--font-handwriting)', fontSize: '1.1rem',
-                                        background: '#00a884', color: '#fff',
-                                        border: 'none', borderRadius: '25px', padding: '10px 24px',
-                                        cursor: 'pointer', boxShadow: '0 4px 10px rgba(0, 168, 132, 0.4)',
-                                        display: 'flex', alignItems: 'center', gap: '8px'
-                                    }}>
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
-                                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                                            <line x1="12" y1="19" x2="12" y2="22"></line>
-                                        </svg>
-                                        Rekam Audio
-                                    </button>
+                                    <AnimatedActionButton
+                                        onClick={startRecording}
+                                        accentColor="#00a884"
+                                        label="Rekam Audio"
+                                        icon={
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                                <line x1="12" y1="19" x2="12" y2="22"></line>
+                                            </svg>
+                                        }
+                                    />
                                 </div>
                             )}
 
@@ -267,31 +331,27 @@ export default function Scene3CakePage({ onNext, onPrev }: Scene3CakePageProps) 
                                     <div style={{ color: '#e74c3c', fontFamily: 'var(--font-handwriting)', fontSize: '1.2rem', marginBottom: '0.5rem', animation: 'flicker 1s infinite' }}>
                                         🔴 Merekam... {fmtSecs(recordSecs)}
                                     </div>
-                                    <button onClick={stopRecording} style={{
-                                        fontFamily: 'var(--font-handwriting)', fontSize: '1.1rem',
-                                        background: '#e74c3c', color: '#fff',
-                                        border: 'none', borderRadius: '25px', padding: '8px 24px',
-                                        cursor: 'pointer', boxShadow: '0 4px 10px rgba(231, 76, 60, 0.4)'
-                                    }}>
-                                        ⏹ Selesai
-                                    </button>
+                                    <AnimatedActionButton
+                                        onClick={stopRecording}
+                                        accentColor="#e74c3c"
+                                        label="Selesai"
+                                        icon={<span style={{ fontSize: '1rem' }}>⏹</span>}
+                                    />
                                 </div>
                             )}
 
                             {audioBlob && stage !== 'sending' && stage !== 'wish_granted' && (
-                                <button onClick={sendToDatabase} style={{
-                                    fontFamily: 'var(--font-handwriting)', fontSize: '1.1rem',
-                                    background: '#27ae60', color: '#fff',
-                                    border: 'none', borderRadius: '25px', padding: '10px 24px',
-                                    cursor: 'pointer', boxShadow: '0 4px 10px rgba(39, 174, 96, 0.4)',
-                                    display: 'flex', alignItems: 'center', gap: '8px'
-                                }}>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <line x1="22" y1="2" x2="11" y2="13"></line>
-                                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                                    </svg>
-                                    Kirimkan harapan mu
-                                </button>
+                                <AnimatedActionButton
+                                    onClick={sendToDatabase}
+                                    accentColor="#27ae60"
+                                    label="Kirimkan harapan mu"
+                                    icon={
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                        </svg>
+                                    }
+                                />
                             )}
 
                             {stage === 'sending' && (
@@ -422,6 +482,89 @@ export default function Scene3CakePage({ onNext, onPrev }: Scene3CakePageProps) 
                     0% { transform: scale(1); opacity: 0.7; }
                     50% { transform: scale(1.05); opacity: 1; }
                     100% { transform: scale(1); opacity: 0.7; }
+                }
+
+                /* ── Animated action button (efek btn-53) ── */
+                .btn-53,
+                .btn-53 *,
+                .btn-53 :after,
+                .btn-53 :before,
+                .btn-53:after,
+                .btn-53:before {
+                    border: 0 solid;
+                    box-sizing: border-box;
+                }
+
+                .btn-53 {
+                    -webkit-tap-highlight-color: transparent;
+                    -webkit-appearance: button;
+                    background-color: var(--btn53-accent, #000);
+                    background-image: none;
+                    color: #fff;
+                    cursor: pointer;
+                    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+                        "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
+                        "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+                    font-size: 1rem;
+                    line-height: 1.5;
+                    margin: 0;
+                    -webkit-mask-image: -webkit-radial-gradient(#000, #fff);
+                    padding: 0;
+                    border: 1px solid var(--btn53-accent, #000);
+                    border-radius: 999px;
+                    display: inline-block;
+                    font-weight: 900;
+                    overflow: hidden;
+                    text-transform: uppercase;
+                    position: relative;
+                }
+
+                .btn-53:disabled {
+                    cursor: default;
+                    opacity: 0.6;
+                }
+
+                .btn-53 svg {
+                    display: block;
+                    vertical-align: middle;
+                }
+
+                .btn-53 .original {
+                    background: #fff;
+                    color: var(--btn53-accent, #000);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    inset: 0;
+                    position: absolute;
+                    padding: 0.7rem 1.6rem;
+                    white-space: nowrap;
+                    transition: transform 0.2s cubic-bezier(0.87, 0, 0.13, 1);
+                }
+
+                .btn-53:hover .original {
+                    transform: translateY(100%);
+                }
+
+                .btn-53 .letters {
+                    display: inline-flex;
+                    padding: 0.7rem 1.6rem;
+                    white-space: nowrap;
+                }
+
+                .btn-53 span {
+                    opacity: 0;
+                    transform: translateY(-15px);
+                    transition: transform 0.2s cubic-bezier(0.87, 0, 0.13, 1), opacity 0.2s;
+                }
+
+                .btn-53 span:nth-child(2n) {
+                    transform: translateY(15px);
+                }
+
+                .btn-53:hover span {
+                    opacity: 1;
+                    transform: translateY(0);
                 }
             `}</style>
         </>

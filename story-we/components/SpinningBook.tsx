@@ -9,37 +9,40 @@ interface SpinningBookProps {
 }
 
 const COLORS = [
-    "#e8729a", "#5cdb95", "#f39c12", "#3498db", 
+    "#e8729a", "#5cdb95", "#f39c12", "#3498db",
     "#9b59b6", "#e74c3c", "#1abc9c", "#d35400",
     "#2980b9", "#c0392b", "#16a085"
 ];
 
-// Component for the romantic typing letter
-function LetterContent({ 
-    isHovered, 
-    onComplete, 
-    onNext 
-}: { 
-    isHovered: boolean, 
-    onComplete: () => void, 
-    onNext: () => void 
+function LetterContent({
+    isHovered,
+    onComplete,
+    onNext,
+    onButtonHoverStart,
+    onButtonHoverEnd,
+}: {
+    isHovered: boolean,
+    onComplete: () => void,
+    onNext: () => void,
+    onButtonHoverStart: () => void,
+    onButtonHoverEnd: () => void,
 }) {
     const [charIndex, setCharIndex] = useState(0);
     const [isComplete, setIsComplete] = useState(false);
-    
+
     const fullText = "Dear Reva,\n\nSejak pertama bertemu,\nduniaku berubah jadi lebih indah.\nSenyummu adalah melodi favoritku,\ndan tawamu kebahagiaanku.\nTerima kasih sudah hadir di hidupku.\n\nI love you, Reva! ♥\n~ Afrizal";
-    
+
     useEffect(() => {
         if (!isHovered) {
             setCharIndex(0);
             setIsComplete(false);
             return;
         }
-        
+
         if (charIndex < fullText.length) {
             const timeout = setTimeout(() => {
                 setCharIndex(prev => prev + 1);
-            }, 35); // Kecepatan mengetik pena
+            }, 35);
             return () => clearTimeout(timeout);
         } else {
             if (!isComplete) {
@@ -58,17 +61,19 @@ function LetterContent({
                     {char}
                 </span>
             ))}
-            
+
             {!isComplete && (
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2c3e50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={styles.penIcon}>
                     <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
                 </svg>
             )}
-            
-            <button 
+
+            <button
                 className={`${styles.clickButton} ${isComplete ? styles.visible : ''}`}
+                onMouseEnter={onButtonHoverStart}
+                onMouseLeave={onButtonHoverEnd}
                 onClick={(e) => {
-                    e.stopPropagation(); 
+                    e.stopPropagation();
                     onNext();
                 }}
             >
@@ -85,6 +90,7 @@ export default function SpinningBook({ onClick }: SpinningBookProps) {
     const holderRef = useRef<HTMLDivElement>(null);
     const frontRef = useRef<HTMLDivElement>(null);
     const pagesRef = useRef<(HTMLDivElement | null)[]>([]);
+    const cornerImageRef = useRef<HTMLDivElement>(null);
     const spinTweenRef = useRef<gsap.core.Tween | null>(null);
 
     const startSpinning = () => {
@@ -99,10 +105,19 @@ export default function SpinningBook({ onClick }: SpinningBookProps) {
 
     useEffect(() => {
         if (!holderRef.current) return;
-        
-        // Initial rotation state
         gsap.set(holderRef.current, { rotationX: 16, rotationY: 0, rotationZ: 0 });
         startSpinning();
+
+        // Corner image starts fully hidden, tucked toward bottom-right off-screen
+        if (cornerImageRef.current) {
+            gsap.set(cornerImageRef.current, {
+                opacity: 0,
+                scale: 0.6,
+                x: 80,
+                y: 40,
+                rotation: -12,
+            });
+        }
 
         return () => {
             spinTweenRef.current?.kill();
@@ -113,26 +128,23 @@ export default function SpinningBook({ onClick }: SpinningBookProps) {
         if (clicked || !holderRef.current || !frontRef.current) return;
         setIsHovered(true);
 
-        // Pause continuous spinning
         spinTweenRef.current?.pause();
-        
+
         const currentRotY = gsap.getProperty(holderRef.current, "rotationY") as number;
         const targetRotY = Math.round(currentRotY / 360) * 360;
 
         gsap.killTweensOf(holderRef.current);
         gsap.killTweensOf(frontRef.current);
 
-        // Hover Effect: Face camera, slight tilt, zoom slightly
         gsap.to(holderRef.current, {
             rotationX: 10,
             rotationY: targetRotY,
-            rotationZ: -3, // Slight 2D tilt
+            rotationZ: -3,
             scale: 1.3,
             duration: 0.6,
             ease: "power2.out"
         });
 
-        // Hover Effect: Open front cover
         gsap.set(frontRef.current, { transformOrigin: "left center" });
         gsap.to(frontRef.current, {
             rotationY: -140,
@@ -149,14 +161,12 @@ export default function SpinningBook({ onClick }: SpinningBookProps) {
         gsap.killTweensOf(holderRef.current);
         gsap.killTweensOf(frontRef.current);
 
-        // Close front cover
         gsap.to(frontRef.current, {
             rotationY: 0,
             duration: 0.5,
             ease: "power2.inOut"
         });
 
-        // Return to normal spinning position
         gsap.to(holderRef.current, {
             rotationX: 16,
             rotationZ: 0,
@@ -171,11 +181,40 @@ export default function SpinningBook({ onClick }: SpinningBookProps) {
         });
     };
 
+    // Triggered when cursor enters the "CLICK HERE" button
+    const handleButtonHoverStart = () => {
+        if (!cornerImageRef.current || clicked) return;
+        gsap.killTweensOf(cornerImageRef.current);
+        gsap.to(cornerImageRef.current, {
+            opacity: 1,
+            scale: 1,
+            x: 0,
+            y: 0,
+            rotation: 0,
+            duration: 0.7,
+            ease: "back.out(1.6)",
+        });
+    };
+
+    // Triggered when cursor leaves the "CLICK HERE" button
+    const handleButtonHoverEnd = () => {
+        if (!cornerImageRef.current || clicked) return;
+        gsap.killTweensOf(cornerImageRef.current);
+        gsap.to(cornerImageRef.current, {
+            opacity: 0,
+            scale: 0.6,
+            x: 80,
+            y: 40,
+            rotation: -12,
+            duration: 0.5,
+            ease: "power2.in",
+        });
+    };
+
     const handleNext = () => {
         if (clicked || !holderRef.current || !frontRef.current || !wrapperRef.current) return;
         setClicked(true);
 
-        // Stop all current animations
         spinTweenRef.current?.kill();
         gsap.killTweensOf(holderRef.current);
         gsap.killTweensOf(frontRef.current);
@@ -195,20 +234,20 @@ export default function SpinningBook({ onClick }: SpinningBookProps) {
             rotationX: 0,
             rotationY: targetRotY,
             rotationZ: 0,
-            scale: 1, // Shrink slightly to prepare for the big zoom
+            scale: 1,
             duration: 0.5,
             ease: "power2.inOut"
-        });
+        }, 0);
 
         tl.to(frontRef.current, {
             rotationY: 0,
             duration: 0.5,
             ease: "power2.inOut"
-        }, "<"); // Run simultaneously with holder reset
+        }, "<");
 
         // 2. Zoom in closer strongly after a dramatic pause
         tl.to(holderRef.current, {
-            scale: 3, 
+            scale: 3,
             duration: 1.2,
             ease: "power2.inOut"
         }, "+=0.15");
@@ -226,13 +265,23 @@ export default function SpinningBook({ onClick }: SpinningBookProps) {
             if (!page) return;
             gsap.set(page, { transformOrigin: "left center" });
             tl.to(page, {
-                rotationY: -155 + (i * 4), 
+                rotationY: -155 + (i * 4),
                 duration: 1.0,
                 ease: "power2.inOut"
-            }, `-=${1.0 - (i * 0.05)}`); // Staggered start
+            }, `-=${1.0 - (i * 0.05)}`);
         });
 
-        // 5. Fade out to transition into Scene 2
+        // 5. Corner image fades out as the scene transitions
+        if (cornerImageRef.current) {
+            tl.to(cornerImageRef.current, {
+                opacity: 0,
+                scale: 0.7,
+                duration: 0.5,
+                ease: "power1.in",
+            }, "-=0.8");
+        }
+
+        // 6. Fade out to transition into Scene 2
         tl.to(wrapperRef.current, {
             opacity: 0,
             duration: 0.6,
@@ -252,9 +301,8 @@ export default function SpinningBook({ onClick }: SpinningBookProps) {
                     role="presentation"
                     aria-label="Buku Berputar"
                 >
-                    {/* Halaman-halaman buku di dalam box */}
                     {[...Array(6)].map((_, i) => (
-                        <div 
+                        <div
                             key={`page-${i}`}
                             className={styles.boxPage}
                             ref={(el) => { pagesRef.current[i] = el; }}
@@ -263,10 +311,12 @@ export default function SpinningBook({ onClick }: SpinningBookProps) {
                             }}
                         >
                             {i === 0 && (
-                                <LetterContent 
-                                    isHovered={isHovered} 
-                                    onComplete={() => {}} 
-                                    onNext={handleNext} 
+                                <LetterContent
+                                    isHovered={isHovered}
+                                    onComplete={() => { }}
+                                    onNext={handleNext}
+                                    onButtonHoverStart={handleButtonHoverStart}
+                                    onButtonHoverEnd={handleButtonHoverEnd}
                                 />
                             )}
                         </div>
@@ -279,6 +329,30 @@ export default function SpinningBook({ onClick }: SpinningBookProps) {
                     <div className={styles.boxBottom}></div>
                     <div className={styles.boxBack}></div>
                 </div>
+            </div>
+
+            {/* Corner reveal image — always mounted, hidden via opacity until button is hovered */}
+            <div
+                ref={cornerImageRef}
+                style={{
+                    position: 'fixed',
+                    bottom: '2rem',
+                    right: '2rem',
+                    zIndex: 200,
+                    pointerEvents: 'none',
+                    opacity: 0,
+                }}
+            >
+                <img
+                    src="/animations/spinningbook.png"
+                    alt=""
+                    style={{
+                        maxWidth: '180px',
+                        width: '30vw',
+                        height: 'auto',
+                        filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.35))',
+                    }}
+                />
             </div>
         </div>
     );

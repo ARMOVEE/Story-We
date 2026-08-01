@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import styles from '../styles/book.module.css';
 
@@ -9,29 +9,111 @@ interface Scene13PromiseProps {
     onPrev?: () => void;
 }
 
+// ── Kanvas tanda tangan — bisa digambar langsung pakai mouse (desktop) ──
+function SignatureCanvas({ width = 140, height = 60 }: { width?: number; height?: number }) {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const isDrawing = useRef(false);
+    const lastPos = useRef<{ x: number; y: number } | null>(null);
+    const [hasSigned, setHasSigned] = useState(false);
+
+    const getPos = (e: React.MouseEvent<HTMLCanvasElement>) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return { x: 0, y: 0 };
+        const rect = canvas.getBoundingClientRect();
+        return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    };
+
+    const handleDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+        isDrawing.current = true;
+        lastPos.current = getPos(e);
+    };
+
+    const handleMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+        if (!isDrawing.current || !canvasRef.current) return;
+        const ctx = canvasRef.current.getContext('2d');
+        if (!ctx) return;
+        const pos = getPos(e);
+        ctx.strokeStyle = '#1a1a1a';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(lastPos.current!.x, lastPos.current!.y);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+        lastPos.current = pos;
+        if (!hasSigned) setHasSigned(true);
+    };
+
+    const handleUp = () => {
+        isDrawing.current = false;
+        lastPos.current = null;
+    };
+
+    const handleClear = () => {
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext('2d');
+        if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
+        setHasSigned(false);
+    };
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem' }}>
+            <canvas
+                ref={canvasRef}
+                width={width}
+                height={height}
+                style={{
+                    border: '1.5px dashed rgba(0,0,0,0.25)',
+                    borderRadius: '6px',
+                    background: 'transparent',
+                    cursor: 'crosshair',
+                    touchAction: 'none',
+                }}
+                onMouseDown={handleDown}
+                onMouseMove={handleMove}
+                onMouseUp={handleUp}
+                onMouseLeave={handleUp}
+            />
+            <button
+                type="button"
+                onClick={handleClear}
+                style={{
+                    fontFamily: 'var(--font-handwriting)',
+                    fontSize: '0.8rem',
+                    color: hasSigned ? '#e8729a' : '#bbb',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                }}
+            >
+                Hapus &amp; ulangi
+            </button>
+        </div>
+    );
+}
+
 export default function Scene13Promise({ onNext, onPrev }: Scene13PromiseProps) {
     const leftTextRef = useRef<HTMLDivElement>(null);
     const titleRef = useRef<HTMLDivElement>(null);
     const underlineRef = useRef<SVGSVGElement>(null);
     const signsRef = useRef<HTMLDivElement>(null);
-    const thumbprintRef = useRef<HTMLDivElement>(null);
-    
+
     const rightTextRef = useRef<HTMLDivElement>(null);
     const circlesRef = useRef<SVGSVGElement>(null);
     const heartsRef = useRef<SVGSVGElement>(null);
-    const smudgeRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const tl = gsap.timeline();
 
-        // Left page elements
         if (titleRef.current) {
             tl.fromTo(titleRef.current, { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: 0.5 }, 0.5);
         }
-        
+
         if (underlineRef.current) {
             const underlinePath = underlineRef.current.querySelector('path');
-            tl.fromTo(underlinePath, 
+            tl.fromTo(underlinePath,
                 { strokeDasharray: 500, strokeDashoffset: 500 },
                 { strokeDashoffset: 0, duration: 1, ease: "power2.out" },
                 0.8
@@ -39,9 +121,9 @@ export default function Scene13Promise({ onNext, onPrev }: Scene13PromiseProps) 
         }
 
         if (leftTextRef.current) {
-            tl.fromTo(leftTextRef.current.children, 
-                { opacity: 0, x: -10 }, 
-                { opacity: 1, x: 0, duration: 0.6, stagger: 0.3 }, 
+            tl.fromTo(leftTextRef.current.children,
+                { opacity: 0, x: -10 },
+                { opacity: 1, x: 0, duration: 0.6, stagger: 0.3 },
                 1.2
             );
         }
@@ -54,20 +136,11 @@ export default function Scene13Promise({ onNext, onPrev }: Scene13PromiseProps) 
             );
         }
 
-        if (thumbprintRef.current) {
-            tl.fromTo(thumbprintRef.current,
-                { opacity: 0, scale: 2, rotation: 15 },
-                { opacity: 0.85, scale: 1, rotation: -5, duration: 0.4, ease: "back.out(2)" },
-                3.5
-            );
-        }
-
-        // Right page elements
         if (rightTextRef.current) {
             tl.fromTo(rightTextRef.current.children,
                 { opacity: 0, y: 10 },
                 { opacity: 1, y: 0, duration: 0.6, stagger: 0.4 },
-                4.5
+                3.8
             );
         }
 
@@ -76,7 +149,7 @@ export default function Scene13Promise({ onNext, onPrev }: Scene13PromiseProps) 
             tl.fromTo(circles,
                 { strokeDasharray: 200, strokeDashoffset: 200 },
                 { strokeDashoffset: 0, duration: 0.8, stagger: 0.5, ease: "power2.out" },
-                6.5
+                5.8
             );
         }
 
@@ -85,15 +158,7 @@ export default function Scene13Promise({ onNext, onPrev }: Scene13PromiseProps) 
             tl.fromTo(heartsPath,
                 { strokeDasharray: 800, strokeDashoffset: 800 },
                 { strokeDashoffset: 0, duration: 1.5, ease: "power1.inOut" },
-                8.0
-            );
-        }
-
-        if (smudgeRef.current) {
-            tl.fromTo(smudgeRef.current,
-                { opacity: 0, scale: 0 },
-                { opacity: 0.5, scale: 1, duration: 0.3 },
-                9.5
+                7.3
             );
         }
 
@@ -139,7 +204,7 @@ export default function Scene13Promise({ onNext, onPrev }: Scene13PromiseProps) 
                         </div>
 
                         <div style={{ padding: '5rem 2rem 2rem 2rem', display: 'flex', flexDirection: 'column', height: '100%' }}>
-                            
+
                             {/* Title: RevRIZAL */}
                             <div style={{ position: 'relative', marginBottom: '3rem' }}>
                                 <div ref={titleRef} style={{ fontFamily: 'var(--font-handwriting)', fontSize: '3.5rem', color: '#1B4F72', letterSpacing: '2px', marginLeft: '1rem', position: 'relative', zIndex: 2 }}>
@@ -152,69 +217,20 @@ export default function Scene13Promise({ onNext, onPrev }: Scene13PromiseProps) 
 
                             {/* Main Left Text */}
                             <div ref={leftTextRef} style={{ fontFamily: 'var(--font-handwriting)', fontSize: '1.4rem', color: '#333', display: 'flex', flexDirection: 'column', gap: '1.2rem', marginLeft: '1rem' }}>
-                                <div>Sayang, cap jempol dibawah</div>
-                                <div>ini ya sayang . . . -</div>
+                                <div>Sayang, tanda tangan</div>
+                                <div>dibawah ini ya sayang . . . -</div>
                                 <div style={{ textTransform: 'uppercase', letterSpacing: '1px' }}>TTD JUGA</div>
                             </div>
 
-                            {/* Signatures and Thumbprint */}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'auto', marginBottom: '2rem', padding: '0 1rem', position: 'relative' }}>
-                                
-                                <div ref={signsRef} style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                                    {/* Left Signature (Afrizal) */}
-                                    <div style={{ fontFamily: 'var(--font-handwriting)', fontSize: '1.5rem', color: '#000', transform: 'rotate(-5deg)' }}>
-                                        <div style={{ position: 'relative' }}>
-                                            <svg width="60" height="40" viewBox="0 0 60 40" style={{ position: 'absolute', top: -5, left: -5, zIndex: 0 }}>
-                                                <path d="M 10 20 L 50 15 M 15 10 L 10 35" stroke="#000" strokeWidth="1.5" />
-                                            </svg>
-                                            <span style={{ position: 'relative', zIndex: 1 }}>Afrizal</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Right Signature (Reva) */}
-                                    <div style={{ fontFamily: 'var(--font-handwriting)', fontSize: '1.5rem', color: '#000', transform: 'rotate(-2deg)' }}>
-                                        <div style={{ position: 'relative' }}>
-                                            <svg width="60" height="40" viewBox="0 0 60 40" style={{ position: 'absolute', top: -10, left: 10, zIndex: 0 }}>
-                                                <path d="M 30 5 L 35 35 M 20 20 L 50 15" stroke="#000" strokeWidth="1" />
-                                            </svg>
-                                            <span style={{ position: 'relative', zIndex: 1 }}>Reva</span>
-                                        </div>
-                                    </div>
+                            {/* Kanvas tanda tangan — bisa digambar pakai mouse */}
+                            <div ref={signsRef} style={{ display: 'flex', justifyContent: 'space-between', gap: '1.5rem', marginTop: 'auto', marginBottom: '2rem', padding: '0 0.5rem' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
+                                    <SignatureCanvas />
+                                    <span style={{ fontFamily: 'var(--font-handwriting)', fontSize: '1rem', color: '#888' }}>Afrizal</span>
                                 </div>
-
-                                {/* Thumbprint Overlay on Right Signature */}
-                                <div 
-                                    ref={thumbprintRef}
-                                    style={{ 
-                                        position: 'absolute', 
-                                        right: '0.5rem', 
-                                        bottom: '-0.5rem',
-                                        width: '60px', 
-                                        height: '75px', 
-                                        zIndex: 10,
-                                        mixBlendMode: 'multiply'
-                                    }}
-                                >
-                                    {/* Abstract thumbprint using multiple curved paths to simulate ridges */}
-                                    <svg viewBox="0 0 100 120" width="100%" height="100%" style={{ filter: 'drop-shadow(0px 0px 2px rgba(220, 20, 60, 0.4))' }}>
-                                        <g stroke="#D11A2A" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.8">
-                                            {/* Center loop */}
-                                            <path d="M 45 60 C 45 40, 55 40, 55 60 C 55 75, 45 75, 45 60" />
-                                            {/* Inner ridges */}
-                                            <path d="M 38 65 C 35 45, 65 45, 62 65 C 60 85, 40 85, 38 65" />
-                                            <path d="M 32 70 C 25 45, 75 45, 68 70 C 65 95, 35 95, 32 70" />
-                                            {/* Outer ridges */}
-                                            <path d="M 26 75 C 15 40, 85 40, 74 75 C 68 105, 32 105, 26 75" />
-                                            <path d="M 20 80 C 5 40, 95 40, 80 80" />
-                                            <path d="M 15 65 C 10 30, 90 30, 85 65" />
-                                            <path d="M 25 25 C 40 10, 60 10, 75 25" />
-                                            <path d="M 35 15 C 45 5, 55 5, 65 15" />
-                                            {/* Bottom smudge curves */}
-                                            <path d="M 30 105 C 40 115, 60 115, 70 105" />
-                                            <path d="M 40 112 C 45 118, 55 118, 60 112" />
-                                        </g>
-                                        <ellipse cx="50" cy="65" rx="35" ry="45" fill="#D11A2A" opacity="0.3" filter="blur(3px)" />
-                                    </svg>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
+                                    <SignatureCanvas />
+                                    <span style={{ fontFamily: 'var(--font-handwriting)', fontSize: '1rem', color: '#888' }}>Reva</span>
                                 </div>
                             </div>
                         </div>
@@ -229,7 +245,7 @@ export default function Scene13Promise({ onNext, onPrev }: Scene13PromiseProps) 
                         </div>
 
                         <div style={{ padding: '6rem 3rem 2rem 3rem', display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
-                            
+
                             {/* Main Right Text */}
                             <div ref={rightTextRef} style={{ fontFamily: 'var(--font-handwriting)', fontSize: '1.4rem', color: '#333', display: 'flex', flexDirection: 'column', gap: '1.5rem', position: 'relative', zIndex: 2 }}>
                                 <div style={{ textAlign: 'center' }}>Terima kasih</div>
@@ -242,31 +258,24 @@ export default function Scene13Promise({ onNext, onPrev }: Scene13PromiseProps) 
 
                             {/* Purple circles drawn over specific words */}
                             <svg ref={circlesRef} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 1, overflow: 'visible' }}>
-                                {/* Circle for "menjadi" (approx row 2) */}
                                 <path d="M 120 155 C 100 150, 100 180, 150 180 C 195 180, 200 155, 175 148 C 150 142, 115 150, 118 165" fill="none" stroke="#7D3C98" strokeWidth="2.5" strokeLinecap="round" opacity="0.8" />
-                                {/* Circle for "terbaik" (approx row 4) */}
                                 <path d="M 130 248 C 110 245, 110 270, 155 272 C 190 275, 205 255, 180 243 C 160 235, 125 245, 125 255" fill="none" stroke="#7D3C98" strokeWidth="2.5" strokeLinecap="round" opacity="0.8" />
-                                {/* Circle for "Seterusnya" (approx row 6) */}
                                 <path d="M 85 338 C 55 330, 45 365, 105 365 C 165 365, 185 338, 150 330 C 115 320, 65 335, 75 350" fill="none" stroke="#7D3C98" strokeWidth="2.5" strokeLinecap="round" opacity="0.8" />
                             </svg>
 
                             {/* Purple interconnected hearts drawing at the bottom */}
                             <div style={{ marginTop: 'auto', marginBottom: '4rem', display: 'flex', justifyContent: 'center', position: 'relative' }}>
                                 <svg ref={heartsRef} width="220" height="80" viewBox="0 0 220 80" style={{ overflow: 'visible' }}>
-                                    {/* Two hearts connected by a single continuous line ending in an arrow */}
-                                    <path 
-                                        d="M 50 60 C 20 70, 0 40, 20 20 C 35 5, 55 20, 55 20 C 55 20, 75 5, 90 20 C 110 40, 90 70, 60 60 C 40 55, 50 40, 70 30 C 90 20, 110 5, 125 20 C 145 40, 125 70, 95 60 C 65 50, 180 60, 200 65 L 195 55 M 200 65 L 190 72" 
-                                        fill="none" 
-                                        stroke="#7D3C98" 
-                                        strokeWidth="2.5" 
-                                        strokeLinecap="round" 
-                                        strokeLinejoin="round" 
-                                        opacity="0.8" 
+                                    <path
+                                        d="M 50 60 C 20 70, 0 40, 20 20 C 35 5, 55 20, 55 20 C 55 20, 75 5, 90 20 C 110 40, 90 70, 60 60 C 40 55, 50 40, 70 30 C 90 20, 110 5, 125 20 C 145 40, 125 70, 95 60 C 65 50, 180 60, 200 65 L 195 55 M 200 65 L 190 72"
+                                        fill="none"
+                                        stroke="#7D3C98"
+                                        strokeWidth="2.5"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        opacity="0.8"
                                     />
                                 </svg>
-
-                                {/* Tiny red smudge below the hearts */}
-                                <div ref={smudgeRef} style={{ position: 'absolute', bottom: '-20px', left: '20px', width: '15px', height: '20px', backgroundColor: '#D11A2A', borderRadius: '50%', filter: 'blur(2px)', opacity: 0.5, transform: 'rotate(-20deg)' }}></div>
                             </div>
 
                         </div>

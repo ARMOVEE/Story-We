@@ -9,25 +9,144 @@ interface Scene8PuzzleProps {
     onPrev?: () => void;
 }
 
+type WordId = 'REVA' | 'FOREVER';
+type Cell = [number, number];
+type ForeverDirection = 'main' | 'anti';
+
+const GRID_SIZE = 7;
+const MAX_WRONG_ATTEMPTS = 3;
+
+// ── Ukuran & posisi grid dalam SVG overlay (dipakai untuk hitung ulang garis) ──
+// SVG overlay: width 300, height 310, offset top:-10px left:-25px dari grid 250x277.
+const COL_W = 250 / GRID_SIZE;
+const ROW_H = 41; // 31px huruf + 10px gap
+function colX(c: number) { return 25 + (c + 0.5) * COL_W; }
+function rowY(r: number) { return 10 + r * ROW_H + 15.5; }
+
+function cellsEqual(a: Cell, b: Cell) {
+    return a[0] === b[0] && a[1] === b[1];
+}
+
+function pathMatches(selected: Cell[], target: Cell[]) {
+    if (selected.length !== target.length) return false;
+    const forward = selected.every((cell, i) => cellsEqual(cell, target[i]));
+    const backward = selected.every((cell, i) => cellsEqual(cell, target[target.length - 1 - i]));
+    return forward || backward;
+}
+
+function randomLetter() {
+    return String.fromCharCode(65 + Math.floor(Math.random() * 26));
+}
+
+function buildForeverPath(direction: ForeverDirection): Cell[] {
+    return Array.from({ length: GRID_SIZE }, (_, i) =>
+        direction === 'main' ? [i, i] : [i, GRID_SIZE - 1 - i]
+    ) as Cell[];
+}
+
+function buildRevaPath(col: number, rowStart: number): Cell[] {
+    return [[rowStart, col], [rowStart + 1, col], [rowStart + 2, col], [rowStart + 3, col]];
+}
+
+// Pilih posisi acak baru untuk REVA (vertikal) & FOREVER (diagonal),
+// dijamin nggak numpuk konflik huruf di titik potongnya.
+function pickRandomPositions(): { revaCol: number; revaRow: number; foreverDir: ForeverDirection } {
+    let attempts = 0;
+    while (attempts < 50) {
+        attempts++;
+        const foreverDir: ForeverDirection = Math.random() < 0.5 ? 'main' : 'anti';
+        const revaCol = Math.floor(Math.random() * GRID_SIZE);
+        const revaRow = Math.floor(Math.random() * (GRID_SIZE - 3)); // rows 0..3, so +3 stays in bounds
+
+        // Baris di diagonal yang kolomnya sama dengan revaCol:
+        // main: row === revaCol.  anti: row === (GRID_SIZE-1-revaCol)
+        const conflictRow = foreverDir === 'main' ? revaCol : GRID_SIZE - 1 - revaCol;
+        const overlaps = conflictRow >= revaRow && conflictRow <= revaRow + 3;
+        if (!overlaps) {
+            return { revaCol, revaRow, foreverDir };
+        }
+    }
+    // fallback aman kalau somehow gagal 50x (harusnya nggak pernah kepakai)
+    return { revaCol: 0, revaRow: 0, foreverDir: 'anti' };
+}
+
+function generateGrid(revaPath: Cell[], foreverPath: Cell[]): string[][] {
+    const g: string[][] = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(''));
+
+    'FOREVER'.split('').forEach((letter, i) => {
+        const [r, c] = foreverPath[i];
+        g[r][c] = letter;
+    });
+    'REVA'.split('').forEach((letter, i) => {
+        const [r, c] = revaPath[i];
+        g[r][c] = letter;
+    });
+
+    for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+            if (!g[r][c]) g[r][c] = randomLetter();
+        }
+    }
+    return g;
+}
+
+// Oval biru vertikal yang pas membungkus REVA di posisi manapun
+function buildRevaOvalPath(col: number, rowStart: number): string {
+    const cx = colX(col);
+    const topY = rowY(rowStart) - 24;
+    const botY = rowY(rowStart + 3) + 24;
+    const halfW = 22;
+    return `M ${cx.toFixed(1)} ${topY.toFixed(1)} `
+        + `C ${(cx - halfW).toFixed(1)} ${(topY + 4).toFixed(1)}, ${(cx - halfW).toFixed(1)} ${(botY - 4).toFixed(1)}, ${cx.toFixed(1)} ${botY.toFixed(1)} `
+        + `C ${(cx + halfW).toFixed(1)} ${(botY - 4).toFixed(1)}, ${(cx + halfW).toFixed(1)} ${(topY + 4).toFixed(1)}, ${cx.toFixed(1)} ${topY.toFixed(1)} Z`;
+}
+
+// Oval merah diagonal (dibangun sebagai ellipse-path berputar) yang pas
+// membungkus FOREVER, arah main (kiri-atas→kanan-bawah) atau anti (kanan-atas→kiri-bawah)
+function buildForeverOvalPath(direction: ForeverDirection): string {
+    const start = direction === 'main' ? { r: 0, c: 0 } : { r: 0, c: GRID_SIZE - 1 };
+    const end = direction === 'main' ? { r: GRID_SIZE - 1, c: GRID_SIZE - 1 } : { r: GRID_SIZE - 1, c: 0 };
+    const x1 = colX(start.c), y1 = rowY(start.r);
+    const x2 = colX(end.c), y2 = rowY(end.r);
+    const cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
+    const dx = x2 - x1, dy = y2 - y1;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    const angleDeg = Math.atan2(dy, dx) * (180 / Math.PI);
+    const rx = length / 2 + 20;
+    const ry = 17;
+    const rad = (angleDeg * Math.PI) / 180;
+    const p1x = cx + rx * Math.cos(rad), p1y = cy + rx * Math.sin(rad);
+    const p2x = cx - rx * Math.cos(rad), p2y = cy - rx * Math.sin(rad);
+    return `M ${p1x.toFixed(1)} ${p1y.toFixed(1)} A ${rx.toFixed(1)} ${ry} ${angleDeg.toFixed(1)} 1 1 ${p2x.toFixed(1)} ${p2y.toFixed(1)} `
+        + `A ${rx.toFixed(1)} ${ry} ${angleDeg.toFixed(1)} 1 1 ${p1x.toFixed(1)} ${p1y.toFixed(1)} Z`;
+}
+
 export default function Scene8Puzzle({ onNext, onPrev }: Scene8PuzzleProps) {
     const pageRef = useRef<HTMLDivElement>(null);
     const textRef = useRef<HTMLDivElement>(null);
     const gridRef = useRef<HTMLDivElement>(null);
-    const svgOverlayRef = useRef<SVGSVGElement>(null);
-    const [showAnswer, setShowAnswer] = useState(false);
+    const revaPathRef = useRef<SVGPathElement>(null);
+    const foreverPathRef = useRef<SVGPathElement>(null);
+    const borderPathRef = useRef<SVGPathElement>(null);
+    const animatedWordsRef = useRef<Set<string>>(new Set());
+    const wrongFlashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Grid 7x7
-    // REVA is vertical at Col 3, Row 2..5
-    // FOREVER is diagonal from Row 0, Col 0 to Row 6, Col 6
-    const grid = [
-        ['F', 'B', 'C', 'H', 'J', 'K', 'L'],
-        ['A', 'O', 'X', 'W', 'T', 'S', 'U'],
-        ['Z', 'L', 'R', 'R', 'P', 'X', 'D'],
-        ['M', 'N', 'Q', 'E', 'Z', 'V', 'Y'],
-        ['I', 'J', 'K', 'V', 'V', 'B', 'N'],
-        ['O', 'P', 'G', 'A', 'W', 'E', 'T'],
-        ['U', 'M', 'C', 'D', 'X', 'Y', 'R'],
-    ];
+    const [gameStarted, setGameStarted] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
+    const [selection, setSelection] = useState<Cell[]>([]);
+    const [foundWords, setFoundWords] = useState<Set<WordId>>(new Set());
+    const [gaveUp, setGaveUp] = useState(false);
+    const [wrongAttempts, setWrongAttempts] = useState(0);
+    const [showWrongFlash, setShowWrongFlash] = useState(false);
+    const [justReshuffled, setJustReshuffled] = useState(false);
+
+    // Posisi REVA & FOREVER + grid — semua di-generate ulang setiap kali diacak
+    const [positions, setPositions] = useState(() => pickRandomPositions());
+    const revaPath = buildRevaPath(positions.revaCol, positions.revaRow);
+    const foreverPath = buildForeverPath(positions.foreverDir);
+    const [grid, setGrid] = useState<string[][]>(() => generateGrid(revaPath, foreverPath));
+
+    const puzzleSolved = foundWords.has('REVA') && foundWords.has('FOREVER');
 
     useEffect(() => {
         const tl = gsap.timeline();
@@ -51,25 +170,126 @@ export default function Scene8Puzzle({ onNext, onPrev }: Scene8PuzzleProps) {
         return () => { tl.kill(); };
     }, []);
 
+    // Animasi tiap garis SECARA TERPISAH — hanya muncul kalau kata itu sendiri ketemu.
+    // Tidak ada lagi toggle opacity di satu container bersama, jadi REVA ketemu
+    // tidak lagi otomatis menampakkan garis FOREVER.
     useEffect(() => {
-        if (showAnswer && svgOverlayRef.current) {
-            const paths = svgOverlayRef.current.querySelectorAll('path');
-
-            gsap.fromTo(paths,
-                { strokeDasharray: 1000, strokeDashoffset: 1000 },
-                { strokeDashoffset: 0, duration: 1.5, stagger: 0.5, ease: 'power2.inOut' }
-            );
-
-            gsap.fromTo(svgOverlayRef.current,
-                { opacity: 0 },
-                { opacity: 1, duration: 0.3 }
-            );
+        if (foundWords.has('REVA') && !animatedWordsRef.current.has('REVA') && revaPathRef.current) {
+            animatedWordsRef.current.add('REVA');
+            const len = revaPathRef.current.getTotalLength();
+            gsap.set(revaPathRef.current, { opacity: 1, strokeDasharray: len, strokeDashoffset: len });
+            gsap.to(revaPathRef.current, { strokeDashoffset: 0, duration: 1.2, ease: 'power2.inOut' });
         }
-    }, [showAnswer]);
+
+        if (foundWords.has('FOREVER') && !animatedWordsRef.current.has('FOREVER') && foreverPathRef.current) {
+            animatedWordsRef.current.add('FOREVER');
+            const len = foreverPathRef.current.getTotalLength();
+            gsap.set(foreverPathRef.current, { opacity: 1, strokeDasharray: len, strokeDashoffset: len });
+            gsap.to(foreverPathRef.current, { strokeDashoffset: 0, duration: 1.5, ease: 'power2.inOut' });
+        }
+
+        if (puzzleSolved && borderPathRef.current && !animatedWordsRef.current.has('BORDER')) {
+            animatedWordsRef.current.add('BORDER');
+            const len = borderPathRef.current.getTotalLength();
+            gsap.set(borderPathRef.current, { opacity: 1, strokeDasharray: len, strokeDashoffset: len });
+            gsap.to(borderPathRef.current, { strokeDashoffset: 0, duration: 1.2, delay: 0.3, ease: 'power2.inOut' });
+        }
+    }, [foundWords, puzzleSolved]);
+
+    const reshuffleEverything = () => {
+        // 3x salah: acak ULANG posisi REVA & FOREVER (bukan cuma huruf pengecoh),
+        // reset progress supaya konsisten dengan posisi/garis yang baru.
+        const newPositions = pickRandomPositions();
+        const newReva = buildRevaPath(newPositions.revaCol, newPositions.revaRow);
+        const newForever = buildForeverPath(newPositions.foreverDir);
+
+        setPositions(newPositions);
+        setGrid(generateGrid(newReva, newForever));
+        setFoundWords(new Set());
+        animatedWordsRef.current = new Set();
+
+        // Sembunyikan lagi garis-garis yang mungkin sudah pernah tergambar
+        [revaPathRef, foreverPathRef, borderPathRef].forEach(ref => {
+            if (ref.current) gsap.set(ref.current, { opacity: 0 });
+        });
+    };
+
+    const registerWrongAttempt = () => {
+        setWrongAttempts(prev => {
+            const next = prev + 1;
+
+            setShowWrongFlash(true);
+            if (wrongFlashTimeoutRef.current) clearTimeout(wrongFlashTimeoutRef.current);
+            wrongFlashTimeoutRef.current = setTimeout(() => setShowWrongFlash(false), 900);
+
+            if (next >= MAX_WRONG_ATTEMPTS) {
+                reshuffleEverything();
+                setJustReshuffled(true);
+                setTimeout(() => setJustReshuffled(false), 1800);
+                return 0;
+            }
+            return next;
+        });
+    };
+
+    useEffect(() => {
+        const handleUp = () => {
+            setIsDragging(false);
+            setSelection(current => {
+                if (current.length > 1 && !puzzleSolved && gameStarted) {
+                    if (pathMatches(current, revaPath)) {
+                        setFoundWords(prev => new Set(prev).add('REVA'));
+                    } else if (pathMatches(current, foreverPath)) {
+                        setFoundWords(prev => new Set(prev).add('FOREVER'));
+                    } else {
+                        registerWrongAttempt();
+                    }
+                }
+                return [];
+            });
+        };
+        window.addEventListener('mouseup', handleUp);
+        return () => window.removeEventListener('mouseup', handleUp);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [puzzleSolved, gameStarted, positions]);
+
+    const startGame = () => setGameStarted(true);
+
+    const handleCellMouseDown = (r: number, c: number) => {
+        if (!gameStarted || puzzleSolved) return;
+        setIsDragging(true);
+        setSelection([[r, c]]);
+    };
+
+    const handleCellMouseEnter = (r: number, c: number) => {
+        if (!isDragging || !gameStarted || puzzleSolved) return;
+        setSelection(prev => {
+            const last = prev[prev.length - 1];
+            if (last && cellsEqual(last, [r, c])) return prev;
+            return [...prev, [r, c]];
+        });
+    };
+
+    const handleGiveUp = () => {
+        setGaveUp(true);
+        setFoundWords(new Set(['REVA', 'FOREVER']));
+    };
+
+    const isCellSelected = (r: number, c: number) => selection.some(cell => cellsEqual(cell, [r, c]));
+    const isCellInFoundReva = (r: number, c: number) => foundWords.has('REVA') && revaPath.some(cell => cellsEqual(cell, [r, c]));
+    const isCellInFoundForever = (r: number, c: number) => foundWords.has('FOREVER') && foreverPath.some(cell => cellsEqual(cell, [r, c]));
+
+    const cellBackground = (r: number, c: number) => {
+        if (isCellInFoundReva(r, c)) return 'rgba(78, 124, 196, 0.25)';
+        if (isCellInFoundForever(r, c)) return 'rgba(231, 76, 60, 0.2)';
+        if (isCellSelected(r, c)) return 'rgba(255, 222, 89, 0.55)';
+        return 'transparent';
+    };
+
+    const remainingChances = MAX_WRONG_ATTEMPTS - wrongAttempts;
 
     return (
         <>
-            {/* Hand-drawn SVG filters — required by the give-up button's sketchy look */}
             <svg height="0" width="0" style={{ position: 'absolute' }}>
                 <defs>
                     <filter id="pzHandDrawnNoise">
@@ -105,7 +325,7 @@ export default function Scene8Puzzle({ onNext, onPrev }: Scene8PuzzleProps) {
                 </div>
             )}
 
-            {onNext && showAnswer && (
+            {onNext && puzzleSolved && (
                 <div className={styles.navBtnWrapperRight}>
                     <button className={`${styles.navBtn} ${styles.navBtnNext}`} onClick={onNext}>
                         <div className={styles.navBtnInner}>
@@ -120,7 +340,6 @@ export default function Scene8Puzzle({ onNext, onPrev }: Scene8PuzzleProps) {
             )}
 
             <div className={styles.bookWrapper} ref={pageRef}>
-                {/* ── LEFT PAGE: Blank or slight decoration ── */}
                 <div className={`${styles.pageLeft} ${styles.linedPage}`}>
                     <div className={styles.pageContent}>
                         <div style={{ position: 'absolute', top: '2.5rem', left: '2rem', fontFamily: 'var(--font-handwriting)', fontSize: '1.1rem', color: '#999' }}>
@@ -135,7 +354,6 @@ export default function Scene8Puzzle({ onNext, onPrev }: Scene8PuzzleProps) {
                     </div>
                 </div>
 
-                {/* ── RIGHT PAGE: The Puzzle ── */}
                 <div className={`${styles.dummyPage} ${styles.linedPage}`} style={{ zIndex: 10 }}>
                     <div className={styles.pageContent}>
                         <div style={{ position: 'absolute', top: '2.5rem', left: '2rem', fontFamily: 'var(--font-handwriting)', fontSize: '1.1rem', color: '#999' }}>
@@ -150,12 +368,59 @@ export default function Scene8Puzzle({ onNext, onPrev }: Scene8PuzzleProps) {
                                 <div>lagi, kesian soalnya rumit</div>
                             </div>
 
-                            {/* Puzzle Area — REVA (vertical) + FOREVER (diagonal) hidden inside the grid */}
+                            {!gameStarted && (
+                                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.2rem' }}>
+                                    <button type="button" className="doodle-btn" onClick={startGame}>
+                                        <span className="btn-text">MAIN YUK!</span>
+
+                                        <div className="icon-1">
+                                            <svg viewBox="0 0 40 80" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M20,0 Q15,20 20,45" fill="none" stroke="#1e1e24" strokeWidth="2.5" strokeLinecap="round"></path>
+                                                <path d="M20,45 l5,10 10,2 -7,8 2,10 -10,-6 -10,6 2,-10 -7,-8 10,-2 z" fill="#ffde59" stroke="#1e1e24" strokeWidth="3" strokeLinejoin="round"></path>
+                                            </svg>
+                                        </div>
+
+                                        <div className="icon-2">
+                                            <svg viewBox="0 0 40 80" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M20,0 Q25,25 20,45" fill="none" stroke="#1e1e24" strokeWidth="2.5" strokeLinecap="round"></path>
+                                                <path d="M20,65 L10,55 A 7 7 0 0 1 20,45 A 7 7 0 0 1 30,55 Z" fill="#ff8ba7" stroke="#1e1e24" strokeWidth="3" strokeLinejoin="round"></path>
+                                            </svg>
+                                        </div>
+
+                                        <div className="icon-3">
+                                            <svg viewBox="0 0 40 80" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M20,0 Q15,25 20,50" fill="none" stroke="#1e1e24" strokeWidth="2.5" strokeLinecap="round"></path>
+                                                <path d="M20,45 Q20,60 10,60 Q20,60 20,75 Q20,60 30,60 Q20,60 20,45 Z" fill="#8ef0ce" stroke="#1e1e24" strokeWidth="3" strokeLinejoin="round"></path>
+                                            </svg>
+                                        </div>
+                                    </button>
+                                </div>
+                            )}
+
+                            {gameStarted && !puzzleSolved && (
+                                <div style={{ textAlign: 'center', marginTop: '0.8rem' }}>
+                                    <div style={{ fontFamily: 'var(--font-handwriting)', fontSize: '0.95rem', color: '#888' }}>
+                                        👆 Klik &amp; seret dari huruf ke huruf buat nyari{' '}
+                                        <strong style={{ color: foundWords.has('REVA') ? '#4e7cc4' : '#888' }}>REVA</strong>
+                                        {' '}sama{' '}
+                                        <strong style={{ color: foundWords.has('FOREVER') ? '#e74c3c' : '#888' }}>FOREVER</strong>
+                                    </div>
+                                    <div style={{ fontFamily: 'var(--font-handwriting)', fontSize: '0.9rem', color: showWrongFlash ? '#e74c3c' : '#aaa', marginTop: '0.3rem', transition: 'color 0.2s' }}>
+                                        {showWrongFlash
+                                            ? 'Yah, salah! 😳'
+                                            : justReshuffled
+                                                ? 'Diacak ulang total (posisi & huruf) biar makin susah 😈'
+                                                : `Kesempatan tersisa: ${remainingChances}/${MAX_WRONG_ATTEMPTS}`}
+                                    </div>
+                                </div>
+                            )}
+
                             <div style={{ position: 'relative', marginTop: '1rem', width: '250px', margin: '1rem auto 0', fontFamily: 'var(--font-handwriting)', fontSize: '1.2rem', color: '#333' }}>
 
-                                <svg ref={svgOverlayRef} width="300" height="310" style={{ position: 'absolute', top: '-10px', left: '-25px', pointerEvents: 'none', opacity: 0, zIndex: 5 }}>
-                                    {/* Border around entire grid — wavy hand-drawn loop, purple, like the notebook photo */}
+                                <svg width="300" height="310" style={{ position: 'absolute', top: '-10px', left: '-25px', pointerEvents: 'none', zIndex: 5 }}>
+                                    {/* Border ungu — cuma muncul kalau DUA-DUANYA ketemu */}
                                     <path
+                                        ref={borderPathRef}
                                         d="M 14 8 Q 8 2, 22 3 Q 60 -1, 130 4 Q 200 -2, 268 6
                                            Q 292 10, 288 30 Q 291 90, 285 150
                                            Q 292 210, 286 265 Q 290 285, 268 288
@@ -163,61 +428,66 @@ export default function Scene8Puzzle({ onNext, onPrev }: Scene8PuzzleProps) {
                                            Q 4 283, 9 260 Q 3 200, 10 150
                                            Q 2 90, 11 35 Q 6 15, 14 8 Z"
                                         fill="none" stroke="#8b6fc9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                                        style={{ opacity: 0 }}
                                     />
 
-                                    {/* REVA — vertical, hand-drawn oval hugging col 3, rows 2..5 */}
+                                    {/* REVA — biru, cuma muncul kalau REVA sendiri ketemu */}
                                     <path
-                                        d="M 150 90
-                                           C 128 92, 126 140, 133 168
-                                           C 126 195, 130 235, 152 248
-                                           C 174 236, 178 196, 171 168
-                                           C 178 141, 174 94, 150 90 Z"
+                                        ref={revaPathRef}
+                                        d={buildRevaOvalPath(positions.revaCol, positions.revaRow)}
                                         fill="none" stroke="#4e7cc4" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+                                        style={{ opacity: 0 }}
                                     />
 
-                                    {/* FOREVER — diagonal, hand-drawn wobbly loop from F (top-left) to R (bottom-right)
-                                        Recomputed to hug the actual diagonal cell centers (7 cols, gap 10px 0,
-                                        lineHeight 31px, container 250px wide, overlay offset top:-10 left:-25),
-                                        with a consistent ~16px perpendicular offset on each side so the band
-                                        stays parallel to the letters instead of wandering off-diagonal. */}
+                                    {/* FOREVER — merah, cuma muncul kalau FOREVER sendiri ketemu */}
                                     <path
-                                        d="M 33 14.2
-                                           C 28 22.2, 27.8 28, 30.8 36
-                                           C 40.66 47.31, 56.64 65.69, 66.5 77
-                                           C 76.36 88.31, 92.34 106.69, 102.2 118
-                                           C 112.06 129.31, 128.04 147.69, 137.9 159
-                                           C 147.76 170.31, 163.74 188.69, 173.6 200
-                                           C 183.46 211.31, 199.44 229.69, 209.4 241
-                                           C 219.26 252.31, 235.24 270.69, 245.1 282
-                                           C 253.1 286, 261 276.8, 267 282.8
-                                           C 271 274.8, 275.2 271, 269.2 261
-                                           C 259.34 249.69, 243.36 231.31, 233.5 220
-                                           C 223.64 208.69, 207.66 190.31, 197.8 179
-                                           C 187.94 167.69, 171.96 149.31, 162.1 138
-                                           C 152.24 126.69, 136.16 108.31, 126.3 97
-                                           C 116.44 85.69, 100.46 67.31, 90.6 56
-                                           C 80.74 44.69, 64.76 26.31, 54.9 15
-                                           C 48.9 19, 39 20.2, 33 14.2
-                                           Z"
+                                        ref={foreverPathRef}
+                                        d={buildForeverOvalPath(positions.foreverDir)}
                                         fill="none" stroke="#e74c3c" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+                                        style={{ opacity: 0 }}
                                     />
                                 </svg>
 
-                                <div ref={gridRef} style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '10px 0', textAlign: 'center', lineHeight: '31px' }}>
+                                <div
+                                    ref={gridRef}
+                                    onDragStart={(e) => e.preventDefault()}
+                                    style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(7, 1fr)',
+                                        gap: '10px 0',
+                                        textAlign: 'center',
+                                        lineHeight: '31px',
+                                        userSelect: 'none',
+                                        WebkitUserSelect: 'none',
+                                    }}
+                                >
                                     {grid.map((row, rIndex) =>
                                         row.map((letter, cIndex) => (
-                                            <div key={`${rIndex}-${cIndex}`}>{letter}</div>
+                                            <div
+                                                key={`${rIndex}-${cIndex}`}
+                                                onMouseDown={() => handleCellMouseDown(rIndex, cIndex)}
+                                                onMouseEnter={() => handleCellMouseEnter(rIndex, cIndex)}
+                                                style={{
+                                                    position: 'relative',
+                                                    zIndex: 6,
+                                                    cursor: gameStarted && !puzzleSolved ? 'pointer' : 'default',
+                                                    backgroundColor: cellBackground(rIndex, cIndex),
+                                                    borderRadius: '50%',
+                                                    transition: 'background-color 0.15s ease',
+                                                }}
+                                            >
+                                                {letter}
+                                            </div>
                                         ))
                                     )}
                                 </div>
                             </div>
 
-                            {/* Give Up Button — hand-drawn sketchy style */}
-                            {!showAnswer && (
+                            {gameStarted && !puzzleSolved && (
                                 <div style={{ marginTop: 'auto', textAlign: 'center', paddingBottom: '2rem', display: 'flex', justifyContent: 'center' }}>
                                     <button
                                         className={styles.pzGiveUpBtn}
-                                        onClick={() => setShowAnswer(true)}
+                                        onClick={handleGiveUp}
                                     >
                                         <svg
                                             className={styles.pzGiveUpCosm}
@@ -245,10 +515,107 @@ export default function Scene8Puzzle({ onNext, onPrev }: Scene8PuzzleProps) {
                                 </div>
                             )}
 
+                            {puzzleSolved && (
+                                <div style={{ marginTop: 'auto', textAlign: 'center', paddingBottom: '2rem', fontFamily: 'var(--font-handwriting)', fontSize: '1.15rem', color: gaveUp ? '#888' : '#27ae60' }}>
+                                    {gaveUp ? 'Nih jawabannya sayang 😅' : '🎉 Yeay, kamu berhasil nemuin dua-duanya!'}
+                                </div>
+                            )}
+
                         </div>
                     </div>
                 </div>
             </div>
+
+            <style>{`
+                @import url("https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap");
+
+                .doodle-btn {
+                    position: relative;
+                    padding: 14px 40px;
+                    background: #ffde59;
+                    font-family: "Patrick Hand", "Comic Sans MS", cursive;
+                    font-size: 22px;
+                    font-weight: bold;
+                    letter-spacing: 2px;
+                    color: #1e1e24;
+                    cursor: pointer;
+                    border: 4px solid #1e1e24;
+                    border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+                    box-shadow: 6px 8px 0px #1e1e24;
+                    transition:
+                        transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        box-shadow 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        background 0.3s ease;
+                    user-select: none;
+                    outline: none;
+                }
+
+                .doodle-btn::before {
+                    content: "";
+                    position: absolute;
+                    inset: 4px;
+                    border: 2px dashed rgba(30, 30, 36, 0.35);
+                    border-radius: inherit;
+                    pointer-events: none;
+                }
+
+                .btn-text {
+                    position: relative;
+                    z-index: 2;
+                    text-shadow: 2px 2px 0px rgba(255, 255, 255, 0.6);
+                }
+
+                .doodle-btn:hover {
+                    transform: translateY(-4px) rotate(-1deg);
+                    box-shadow: 8px 12px 0px #1e1e24;
+                    background: linear-gradient(85deg, #ffde59, #fec195, #ffb6c1, #dcd0ff, #8ef0ce);
+                    background-size: 300% 300%;
+                    animation: doodle-wind 3s ease-in-out infinite;
+                }
+
+                @keyframes doodle-wind {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+
+                .doodle-btn:active {
+                    transform: translate(4px, 6px) rotate(1deg) !important;
+                    box-shadow: 2px 2px 0px #1e1e24 !important;
+                    transition: transform 0.1s ease, box-shadow 0.1s ease;
+                }
+
+                .doodle-btn:focus-visible {
+                    outline: 4px dashed #8ef0ce;
+                    outline-offset: 8px;
+                }
+
+                .icon-1, .icon-2, .icon-3 {
+                    position: absolute;
+                    top: -10px;
+                    transform-origin: 50% 0;
+                    transition: all 0.5s ease-in-out;
+                    filter: drop-shadow(3px 4px 0px #1e1e24);
+                    pointer-events: none;
+                    z-index: 5;
+                }
+
+                .icon-1 { right: 12px; width: 28px; transform: rotate(8deg); }
+                .icon-2 { left: 34px; width: 20px; transform: rotate(-12deg); }
+                .icon-3 { left: 8px; width: 24px; transform: rotate(5deg); }
+
+                .doodle-btn:hover .icon-1 { animation: swing-1 2.5s cubic-bezier(0.52, 0, 0.58, 1) infinite; }
+                .doodle-btn:hover .icon-2 { animation: swing-2 3s cubic-bezier(0.52, 0, 0.58, 1) 0.5s infinite; }
+                .doodle-btn:hover .icon-3 { animation: swing-3 2s cubic-bezier(0.52, 0, 0.58, 1) 0.2s infinite; }
+
+                .doodle-btn:active .icon-1 { transform: rotate(-25deg) scale(1.1); }
+                .doodle-btn:active .icon-2 { transform: rotate(30deg) scale(1.1); }
+                .doodle-btn:active .icon-3 { transform: rotate(-20deg) scale(1.1); }
+
+                @keyframes swing-1 { 0% { transform: rotate(8deg); } 50% { transform: rotate(-15deg); } 100% { transform: rotate(8deg); } }
+                @keyframes swing-2 { 0% { transform: rotate(-12deg); } 50% { transform: rotate(18deg); } 100% { transform: rotate(-12deg); } }
+                @keyframes swing-3 { 0% { transform: rotate(5deg); } 50% { transform: rotate(-20deg); } 100% { transform: rotate(5deg); } }
+            `}</style>
         </>
     );
 }

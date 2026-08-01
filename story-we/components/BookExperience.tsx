@@ -24,8 +24,10 @@ import styles from '../styles/book.module.css';
 
 export default function BookExperience() {
   const [scene, setScene] = useState<number>(0);
+  const [withAudio, setWithAudio] = useState<boolean>(false);
 
-  const handleIntroComplete = (withAudio: boolean) => {
+  const handleIntroComplete = (userSelectedAudio: boolean) => {
+    setWithAudio(userSelectedAudio);
     setScene(1);
   };
 
@@ -93,7 +95,7 @@ export default function BookExperience() {
     <div className={styles.bookContainer}>
       {scene > 0 && (
         <>
-          <DynamicIslandMusic />
+          <DynamicIslandMusic initialPlaying={withAudio} />
           <ThemeToggle />
         </>
       )}

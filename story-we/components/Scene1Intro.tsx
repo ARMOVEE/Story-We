@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
-import { Volume2, VolumeX } from 'lucide-react';
 import styles from '../styles/book.module.css';
 
 interface Scene1IntroProps {
@@ -19,12 +18,24 @@ const CornerSVG = () => (
   </svg>
 );
 
-const AnimatedButton = ({ text, topText, bottomText, onClick, disabled }: { text: string, topText: string, bottomText: string, onClick: () => void, disabled: boolean }) => (
-  <div 
-    className={styles.btnContainer} 
-    onClick={() => { if (!disabled) onClick(); }} 
+interface AnimatedButtonProps {
+  text: string;
+  topText: string;
+  bottomText: string;
+  gifSrc: string;
+  onClick: () => void;
+  disabled: boolean;
+}
+
+const AnimatedButton = ({ text, topText, bottomText, gifSrc, onClick, disabled }: AnimatedButtonProps) => (
+  <div
+    className={styles.btnContainer}
+    onClick={() => { if (!disabled) onClick(); }}
     style={{ opacity: disabled ? 0.5 : 1, cursor: disabled ? 'default' : 'pointer' }}
   >
+    {/* GIF muncul di atas tombol saat hover — file dari public/animations/ */}
+    <img src={gifSrc} alt="" className={styles.btnGifPreview} />
+
     <div className={`${styles.btnDrawer} ${styles.transitionTop}`}>{topText}</div>
     <div className={`${styles.btnDrawer} ${styles.transitionBottom}`}>{bottomText}</div>
 
@@ -48,15 +59,13 @@ export default function Scene1Intro({ onComplete }: Scene1IntroProps) {
   useEffect(() => {
     if (!svgRef.current) return;
     const paths = svgRef.current.querySelectorAll('path');
-    
-    // Set initial stroke dasharray and dashoffset
+
     paths.forEach(path => {
       const length = path.getTotalLength();
       path.style.strokeDasharray = `${length}`;
       path.style.strokeDashoffset = `${length}`;
     });
 
-    // Reveal buttons first
     gsap.to(audioBtnsRef.current, {
       opacity: 1,
       y: -20,
@@ -71,13 +80,10 @@ export default function Scene1Intro({ onComplete }: Scene1IntroProps) {
     if (!svgRef.current || !containerRef.current || !audioBtnsRef.current) return;
     const paths = svgRef.current.querySelectorAll('path');
 
-    // Hide buttons
     gsap.to(audioBtnsRef.current, { opacity: 0, duration: 0.5 });
 
-    // Animate signature
     const tl = gsap.timeline({
       onComplete: () => {
-        // Fade out entire intro
         gsap.to(containerRef.current, {
           opacity: 0,
           duration: 1,
@@ -112,7 +118,7 @@ export default function Scene1Intro({ onComplete }: Scene1IntroProps) {
         <path d="M 210,80 L 210,30 C 240,30 250,55 210,55 L 240,80" />
         {/* Y */}
         <path d="M 260,30 L 280,60 L 300,30 M 280,60 L 280,80" />
-        
+
         {/* W */}
         <path d="M 340,30 L 350,80 L 365,50 L 380,80 L 390,30" />
         {/* E */}
@@ -120,17 +126,19 @@ export default function Scene1Intro({ onComplete }: Scene1IntroProps) {
       </svg>
 
       <div className={styles.audioOptions} ref={audioBtnsRef}>
-        <AnimatedButton 
+        <AnimatedButton
           text="With Music"
           topText="Turn on"
           bottomText="the volume"
+          gifSrc="/animations/music.gif"
           onClick={() => handleEnter(true)}
           disabled={!showBtns}
         />
-        <AnimatedButton 
+        <AnimatedButton
           text="Silently"
           topText="Keep it"
           bottomText="quiet"
+          gifSrc="/animations/silent.gif"
           onClick={() => handleEnter(false)}
           disabled={!showBtns}
         />
