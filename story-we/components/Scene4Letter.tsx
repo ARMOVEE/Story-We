@@ -5,15 +5,18 @@ import gsap from 'gsap';
 import styles from '../styles/book.module.css';
 
 interface Scene4LetterProps {
+    isActive?: boolean;
     onNext?: () => void;
     onPrev?: () => void;
 }
 
-export default function Scene4Letter({ onNext, onPrev }: Scene4LetterProps) {
+export default function Scene4Letter({ onNext, onPrev, isActive = true }: Scene4LetterProps) {
     const pageRef = useRef<HTMLDivElement>(null);
     const textRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        if (!isActive) return;
+
         if (textRef.current) {
             gsap.fromTo(textRef.current,
                 { opacity: 0, y: 10 },
@@ -21,19 +24,30 @@ export default function Scene4Letter({ onNext, onPrev }: Scene4LetterProps) {
             );
         }
 
-        // Jittery hand-drawn wiggle for circled words
+        // Pulse/heartbeat (lebih besar) + getaran/vibration kecil buat kata-kata
+        // yang dilingkari — dua animasi jalan bareng di elemen yang sama.
         const circles = textRef.current?.querySelectorAll(`.${styles.circledWord}`);
         if (circles && circles.length > 0) {
             circles.forEach((circle, i) => {
+                // Pulse — membesar-mengecil, agak besar sekarang
                 gsap.to(circle, {
-                    rotation: () => gsap.utils.random(-3, 3),
-                    x: () => gsap.utils.random(-1.5, 1.5),
-                    y: () => gsap.utils.random(-1, 1),
-                    duration: 0.15,
+                    scale: 1.18,
+                    duration: 0.8,
+                    ease: 'sine.inOut',
+                    repeat: -1,
+                    yoyo: true,
+                    transformOrigin: 'center center',
+                    delay: 1.7 + i * 0.1,
+                });
+                // Getaran — jitter kecil & cepat, jalan bareng pulse-nya
+                gsap.to(circle, {
+                    x: () => gsap.utils.random(-2, 2),
+                    y: () => gsap.utils.random(-2, 2),
+                    duration: 0.06,
                     ease: 'steps(1)',
                     repeat: -1,
                     repeatRefresh: true,
-                    delay: 1.7 + i * 0.1, // start after text fade-in settles
+                    delay: 1.7 + i * 0.1,
                 });
             });
         }
@@ -41,8 +55,50 @@ export default function Scene4Letter({ onNext, onPrev }: Scene4LetterProps) {
 
     return (
         <>
+            {/* ── speker.webp & awan.webp: ditampilkan langsung (statis, tanpa animasi) ── */}
+            {isActive && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        zIndex: 500,
+                        pointerEvents: 'none',
+                    }}
+                >
+                    <img
+                        src="/animations/speker.webp"
+                        alt=""
+                        style={{
+                            position: 'absolute',
+                            top: '58%',
+                            left: '25%',
+                            transform: 'translate(-50%, -50%) rotate(-25deg)',
+                            transformOrigin: 'center center',
+                            width: 'clamp(140px, 18vw, 230px)',
+                            height: 'auto',
+                            pointerEvents: 'none',
+                            userSelect: 'none',
+                        }}
+                    />
+                    <img
+                        src="/animations/awan.webp"
+                        alt=""
+                        style={{
+                            position: 'absolute',
+                            top: '39%',
+                            left: '35%',
+                            transform: 'translate(-50%, -50%)',
+                            width: 'clamp(200px, 25vw, 320px)',
+                            height: 'auto',
+                            pointerEvents: 'none',
+                            userSelect: 'none',
+                        }}
+                    />
+                </div>
+            )}
+
             {/* ── Back button ── */}
-            {onPrev && (
+            {isActive && onPrev && (
                 <div className={styles.navBtnWrapperLeft}>
                     <button className={`${styles.navBtn} ${styles.navBtnPrev}`} onClick={onPrev}>
                         <div className={styles.navBtnInner}>
@@ -57,7 +113,7 @@ export default function Scene4Letter({ onNext, onPrev }: Scene4LetterProps) {
             )}
 
             {/* ── Next button ── */}
-            {onNext && (
+            {isActive && onNext && (
                 <div className={styles.navBtnWrapperRight}>
                     <button className={`${styles.navBtn} ${styles.navBtnNext}`} onClick={onNext}>
                         <div className={styles.navBtnInner}>
@@ -72,7 +128,80 @@ export default function Scene4Letter({ onNext, onPrev }: Scene4LetterProps) {
             )}
 
             {/* ── Book wrapper ── */}
-            <div className={styles.bookWrapper} ref={pageRef}>
+            <div className={styles.bookWrapper} ref={pageRef} style={{ position: 'relative' }}>
+
+                {/* Dekorasi statis 4 pojok, pakai love.webp — pola sama kayak
+                    arrow/star/mask/omg di Scene3 (position absolute, relatif
+                    ke bookWrapper, bukan ke viewport). */}
+                {isActive && (
+                    <>
+                        <img
+                            src="/animations/love.webp"
+                            alt=""
+                            style={{
+                                position: 'absolute',
+                                top: '-20px',
+                                left: '-20px',
+                                width: 'clamp(60px, 7vw, 100px)',
+                                height: 'auto',
+                                pointerEvents: 'none',
+                                userSelect: 'none',
+                                zIndex: 60,
+                                transformOrigin: 'center center',
+                                animation: 'loveHeartbeat 1.6s ease-in-out infinite',
+                            }}
+                        />
+                        <img
+                            src="/animations/love.webp"
+                            alt=""
+                            style={{
+                                position: 'absolute',
+                                top: '-20px',
+                                right: '-20px',
+                                width: 'clamp(60px, 7vw, 100px)',
+                                height: 'auto',
+                                pointerEvents: 'none',
+                                userSelect: 'none',
+                                zIndex: 60,
+                                transformOrigin: 'center center',
+                                animation: 'loveHeartbeat 1.6s ease-in-out infinite',
+                            }}
+                        />
+                        <img
+                            src="/animations/love.webp"
+                            alt=""
+                            style={{
+                                position: 'absolute',
+                                bottom: '-20px',
+                                left: '-20px',
+                                width: 'clamp(60px, 7vw, 100px)',
+                                height: 'auto',
+                                pointerEvents: 'none',
+                                userSelect: 'none',
+                                zIndex: 60,
+                                transformOrigin: 'center center',
+                                animation: 'loveHeartbeat 1.6s ease-in-out infinite',
+                            }}
+                        />
+                        <img
+                            src="/animations/love.webp"
+                            alt=""
+                            style={{
+                                position: 'absolute',
+                                bottom: '-20px',
+                                right: '-20px',
+                                width: 'clamp(60px, 7vw, 100px)',
+                                height: 'auto',
+                                pointerEvents: 'none',
+                                userSelect: 'none',
+                                zIndex: 60,
+                                transformOrigin: 'center center',
+                                animation: 'loveHeartbeat 1.6s ease-in-out infinite',
+                            }}
+                        />
+                    </>
+                )}
+
                 {/* Left lined page (blank) */}
                 <div
                     className={styles.pageLeft}
@@ -125,6 +254,14 @@ export default function Scene4Letter({ onNext, onPrev }: Scene4LetterProps) {
                     </div>
                 </div>
             </div>
+
+            <style>{`
+                @keyframes loveHeartbeat {
+                    0% { transform: scale(1); }
+                    50% { transform: scale(1.12); }
+                    100% { transform: scale(1); }
+                }
+            `}</style>
         </>
     );
 }

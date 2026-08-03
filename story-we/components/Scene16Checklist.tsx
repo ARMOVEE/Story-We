@@ -6,6 +6,7 @@ import styles from '../styles/book.module.css';
 import cx from '../styles/checklist.module.css';
 
 interface Scene16ChecklistProps {
+    isActive?: boolean;
     onNext?: () => void;
     onPrev?: () => void;
 }
@@ -54,7 +55,7 @@ function NotebookCheckbox({ id, label }: { id: string; label: string }) {
     );
 }
 
-export default function Scene16Checklist({ onNext, onPrev }: Scene16ChecklistProps) {
+export default function Scene16Checklist({ onNext, onPrev, isActive = true }: Scene16ChecklistProps) {
     const titleRef = useRef<HTMLDivElement>(null);
     const subtitleRef = useRef<HTMLDivElement>(null);
     const checklistRef = useRef<HTMLDivElement>(null);
@@ -63,6 +64,7 @@ export default function Scene16Checklist({ onNext, onPrev }: Scene16ChecklistPro
     const smudgeRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        if (!isActive) return;
         const tl = gsap.timeline();
 
         // Left page ghost text
@@ -142,7 +144,7 @@ export default function Scene16Checklist({ onNext, onPrev }: Scene16ChecklistPro
                 </filter>
             </svg>
 
-            {onPrev && (
+            {isActive && onPrev && (
                 <div className={styles.navBtnWrapperLeft}>
                     <button className={`${styles.navBtn} ${styles.navBtnPrev}`} onClick={onPrev}>
                         <div className={styles.navBtnInner}>
@@ -156,7 +158,7 @@ export default function Scene16Checklist({ onNext, onPrev }: Scene16ChecklistPro
                 </div>
             )}
 
-            {onNext && (
+            {isActive && onNext && (
                 <div className={styles.navBtnWrapperRight}>
                     <button className={`${styles.navBtn} ${styles.navBtnNext}`} onClick={onNext}>
                         <div className={styles.navBtnInner}>

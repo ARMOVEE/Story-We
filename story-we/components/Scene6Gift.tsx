@@ -5,11 +5,12 @@ import gsap from 'gsap';
 import styles from '../styles/book.module.css';
 
 interface Scene6GiftProps {
+    isActive?: boolean;
     onNext?: () => void;
     onPrev?: () => void;
 }
 
-export default function Scene6Gift({ onNext, onPrev }: Scene6GiftProps) {
+export default function Scene6Gift({ onNext, onPrev, isActive = true }: Scene6GiftProps) {
     const pageRef = useRef<HTMLDivElement>(null);
     const leftTextRef = useRef<HTMLDivElement>(null);
     const rightTextRef = useRef<HTMLDivElement>(null);
@@ -23,6 +24,7 @@ export default function Scene6Gift({ onNext, onPrev }: Scene6GiftProps) {
     const floatingHeartsRef = useRef<SVGGElement>(null);
 
     useEffect(() => {
+        if (!isActive) return;
         const tl = gsap.timeline();
 
         // Fade in page text
@@ -142,7 +144,7 @@ export default function Scene6Gift({ onNext, onPrev }: Scene6GiftProps) {
 
     return (
         <>
-            {onPrev && (
+            {isActive && onPrev && (
                 <div className={styles.navBtnWrapperLeft}>
                     <button className={`${styles.navBtn} ${styles.navBtnPrev}`} onClick={onPrev}>
                         <div className={styles.navBtnInner}>
@@ -156,7 +158,7 @@ export default function Scene6Gift({ onNext, onPrev }: Scene6GiftProps) {
                 </div>
             )}
 
-            {onNext && (
+            {isActive && onNext && (
                 <div className={styles.navBtnWrapperRight}>
                     <button className={`${styles.navBtn} ${styles.navBtnNext}`} onClick={onNext}>
                         <div className={styles.navBtnInner}>

@@ -5,6 +5,7 @@ import gsap from 'gsap';
 import styles from '../styles/book.module.css';
 
 interface Scene13PromiseProps {
+    isActive?: boolean;
     onNext?: () => void;
     onPrev?: () => void;
 }
@@ -94,7 +95,7 @@ function SignatureCanvas({ width = 140, height = 60 }: { width?: number; height?
     );
 }
 
-export default function Scene13Promise({ onNext, onPrev }: Scene13PromiseProps) {
+export default function Scene13Promise({ onNext, onPrev, isActive = true }: Scene13PromiseProps) {
     const leftTextRef = useRef<HTMLDivElement>(null);
     const titleRef = useRef<HTMLDivElement>(null);
     const underlineRef = useRef<SVGSVGElement>(null);
@@ -105,6 +106,7 @@ export default function Scene13Promise({ onNext, onPrev }: Scene13PromiseProps) 
     const heartsRef = useRef<SVGSVGElement>(null);
 
     useEffect(() => {
+        if (!isActive) return;
         const tl = gsap.timeline();
 
         if (titleRef.current) {
@@ -167,7 +169,7 @@ export default function Scene13Promise({ onNext, onPrev }: Scene13PromiseProps) 
 
     return (
         <>
-            {onPrev && (
+            {isActive && onPrev && (
                 <div className={styles.navBtnWrapperLeft}>
                     <button className={`${styles.navBtn} ${styles.navBtnPrev}`} onClick={onPrev}>
                         <div className={styles.navBtnInner}>
@@ -181,7 +183,7 @@ export default function Scene13Promise({ onNext, onPrev }: Scene13PromiseProps) 
                 </div>
             )}
 
-            {onNext && (
+            {isActive && onNext && (
                 <div className={styles.navBtnWrapperRight}>
                     <button className={`${styles.navBtn} ${styles.navBtnNext}`} onClick={onNext}>
                         <div className={styles.navBtnInner}>

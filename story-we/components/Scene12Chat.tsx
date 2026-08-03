@@ -5,6 +5,7 @@ import gsap from 'gsap';
 import styles from '../styles/book.module.css';
 
 interface Scene12ChatProps {
+    isActive?: boolean;
     onNext?: () => void;
     onPrev?: () => void;
 }
@@ -16,7 +17,7 @@ const messages = [
     { id: 4, side: 'right', sender: 'dia', text: 'hahaha', delay: 12.5 },
 ];
 
-export default function Scene12Chat({ onNext, onPrev }: Scene12ChatProps) {
+export default function Scene12Chat({ onNext, onPrev, isActive = true }: Scene12ChatProps) {
     const leftTextRef = useRef<HTMLDivElement>(null);
     const kissRef = useRef<HTMLDivElement>(null);
     const rightIntroRef = useRef<HTMLDivElement>(null);
@@ -27,6 +28,7 @@ export default function Scene12Chat({ onNext, onPrev }: Scene12ChatProps) {
     const [typingId, setTypingId] = useState<number | null>(null);
 
     useEffect(() => {
+        if (!isActive) return;
         const tl = gsap.timeline({ defaults: { ease: 'power2.out' } });
 
         // Left text fade in
@@ -66,6 +68,7 @@ export default function Scene12Chat({ onNext, onPrev }: Scene12ChatProps) {
 
     // Scroll chat to bottom when new message appears
     useEffect(() => {
+        if (!isActive) return;
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
@@ -73,7 +76,7 @@ export default function Scene12Chat({ onNext, onPrev }: Scene12ChatProps) {
 
     return (
         <>
-            {onPrev && (
+            {isActive && onPrev && (
                 <div className={styles.navBtnWrapperLeft}>
                     <button className={`${styles.navBtn} ${styles.navBtnPrev}`} onClick={onPrev}>
                         <div className={styles.navBtnInner}>
@@ -87,7 +90,7 @@ export default function Scene12Chat({ onNext, onPrev }: Scene12ChatProps) {
                 </div>
             )}
 
-            {onNext && (
+            {isActive && onNext && (
                 <div className={styles.navBtnWrapperRight}>
                     <button className={`${styles.navBtn} ${styles.navBtnNext}`} onClick={onNext}>
                         <div className={styles.navBtnInner}>

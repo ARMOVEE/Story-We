@@ -5,6 +5,7 @@ import gsap from 'gsap';
 import styles from '../styles/book.module.css';
 
 interface Scene3CakePageProps {
+    isActive?: boolean;
     onNext: () => void;
     onPrev?: () => void;
 }
@@ -58,7 +59,7 @@ function AnimatedActionButton({ label, onClick, icon, accentColor, disabled }: A
     );
 }
 
-export default function Scene3CakePage({ onNext, onPrev }: Scene3CakePageProps) {
+export default function Scene3CakePage({ onNext, onPrev, isActive = true }: Scene3CakePageProps) {
     const pageRef = useRef<HTMLDivElement>(null);
     const textBlockRef = useRef<HTMLDivElement>(null);
     const cakeRef = useRef<HTMLDivElement>(null);
@@ -82,6 +83,7 @@ export default function Scene3CakePage({ onNext, onPrev }: Scene3CakePageProps) 
 
     // Animate text in on mount
     useEffect(() => {
+        if (!isActive) return;
         const tl = gsap.timeline();
         if (textBlockRef.current) {
             tl.fromTo(textBlockRef.current,
@@ -204,7 +206,7 @@ export default function Scene3CakePage({ onNext, onPrev }: Scene3CakePageProps) 
 
     return (
         <>
-            {onPrev && (
+            {isActive && onPrev && (
                 <div className={styles.navBtnWrapperLeft}>
                     <button className={`${styles.navBtn} ${styles.navBtnPrev}`} onClick={onPrev}>
                         <div className={styles.navBtnInner}>
@@ -219,7 +221,7 @@ export default function Scene3CakePage({ onNext, onPrev }: Scene3CakePageProps) 
             )}
 
             {/* Next Button only shows when wish is granted */}
-            {stage === 'wish_granted' && (
+            {isActive && stage === 'wish_granted' && (
                 <div className={styles.navBtnWrapperRight}>
                     <button className={`${styles.navBtn} ${styles.navBtnNext}`} onClick={onNext}>
                         <div className={styles.navBtnInner}>
@@ -233,7 +235,91 @@ export default function Scene3CakePage({ onNext, onPrev }: Scene3CakePageProps) 
                 </div>
             )}
 
-            <div className={styles.bookWrapper} ref={pageRef}>
+            {/*
+                bookWrapper dijadikan positioning context (position: relative)
+                supaya 4 dekorasi gif/webp di bawah ini (position: absolute)
+                nempel di siku-siku BUKU itu sendiri, bukan di siku-siku
+                browser/viewport seperti sebelumnya (yang pakai position: fixed).
+            */}
+            <div className={styles.bookWrapper} ref={pageRef} style={{ position: 'relative' }}>
+
+                {isActive && (
+                    <>
+                        {/* Ujung kiri atas buku — dimiringkan supaya "mengarah" ke teks di halaman kiri.
+                            Kalau arahnya masih belum pas, tinggal main-mainin 2 hal ini:
+                            1) scaleX(-1) → membalik gambar secara horizontal (mirror)
+                            2) rotate(...) → putar searah/berlawanan jarum jam
+                            Kombinasi di bawah ini bikin arrow yang tadinya "nunjuk kiri-bawah"
+                            jadi ke-mirror dulu (jadi nunjuk kanan-bawah), baru diputar dikit
+                            supaya makin ngarah ke teks "Date:" di bawahnya. */}
+                        <img
+                            src="/animations/arrow.gif"
+                            alt=""
+                            style={{
+                                position: 'absolute',
+                                top: '-20px',
+                                left: '-10px',
+                                width: 'clamp(60px, 7vw, 100px)',
+                                height: 'auto',
+                                pointerEvents: 'none',
+                                userSelect: 'none',
+                                zIndex: 60,
+                                transform: 'scaleX(-1) rotate(20deg)',
+                                transformOrigin: 'center center',
+                            }}
+                        />
+                        {/* Ujung kanan atas buku */}
+                        <img
+                            src="/animations/star.gif"
+                            alt=""
+                            style={{
+                                position: 'absolute',
+                                top: '-30px',
+                                right: '-30px',
+                                width: 'clamp(60px, 7vw, 100px)',
+                                height: 'auto',
+                                pointerEvents: 'none',
+                                userSelect: 'none',
+                                zIndex: 60,
+                            }}
+                        />
+                        {/* Ujung kiri bawah buku */}
+                        <img
+                            src="/animations/mask.gif"
+                            alt=""
+                            style={{
+                                position: 'absolute',
+                                bottom: '-30px',
+                                left: '-30px',
+                                width: 'clamp(60px, 7vw, 100px)',
+                                height: 'auto',
+                                pointerEvents: 'none',
+                                userSelect: 'none',
+                                zIndex: 60,
+                            }}
+                        />
+                        {/* Ujung kanan bawah buku — goyang kayak setir mobil, kiri-kanan, patah-patah.
+                            Ukuran dibikin "sedang" (lebih kecil dari sudut lain yang 60-100px). */}
+                        <img
+                            src="/animations/omg.webp"
+                            alt=""
+                            style={{
+                                position: 'absolute',
+                                bottom: '-20px',
+                                right: '-20px',
+                                width: 'clamp(80px, 9vw, 130px)',
+                                height: 'auto',
+                                pointerEvents: 'none',
+                                userSelect: 'none',
+                                zIndex: 60,
+                                transformOrigin: 'center center',
+                                animation: 'steerShake 1.1s steps(2, jump-none) infinite',
+                                willChange: 'transform',
+                            }}
+                        />
+                    </>
+                )}
+
                 {/* ── LEFT PAGE ── */}
                 <div className={`${styles.pageLeft} ${styles.linedPage}`}>
                     <div className={styles.pageContent} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -482,6 +568,21 @@ export default function Scene3CakePage({ onNext, onPrev }: Scene3CakePageProps) 
                     0% { transform: scale(1); opacity: 0.7; }
                     50% { transform: scale(1.05); opacity: 1; }
                     100% { transform: scale(1); opacity: 0.7; }
+                }
+
+                /* Goyang kayak orang muter setir mobil kiri-kanan, tapi
+                   "patah-patah" (bukan smooth) — makanya animation-nya
+                   pakai timing function steps(), bukan ease/linear. */
+                @keyframes steerShake {
+                    0%   { transform: rotate(0deg); }
+                    12%  { transform: rotate(-18deg); }
+                    25%  { transform: rotate(-18deg); }
+                    37%  { transform: rotate(0deg); }
+                    50%  { transform: rotate(18deg); }
+                    62%  { transform: rotate(18deg); }
+                    75%  { transform: rotate(0deg); }
+                    87%  { transform: rotate(-18deg); }
+                    100% { transform: rotate(0deg); }
                 }
 
                 /* ── Animated action button (efek btn-53) ── */

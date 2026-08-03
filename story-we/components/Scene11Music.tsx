@@ -5,6 +5,7 @@ import gsap from 'gsap';
 import styles from '../styles/book.module.css';
 
 interface Scene11MusicProps {
+    isActive?: boolean;
     onNext?: () => void;
     onPrev?: () => void;
     /** Song / artist text shown on the card */
@@ -16,6 +17,7 @@ interface Scene11MusicProps {
 }
 
 export default function Scene11Music({
+    isActive = true,
     onNext,
     onPrev,
     songTitle = 'Music Name',
@@ -80,6 +82,7 @@ export default function Scene11Music({
     };
 
     useEffect(() => {
+        if (!isActive) return;
         const tl = gsap.timeline({ defaults: { ease: 'power2.out' } });
 
         if (leftFadeRef.current) {
@@ -128,6 +131,7 @@ export default function Scene11Music({
 
     // Notes only float while playing
     useEffect(() => {
+        if (!isActive) return;
         if (isPlaying) {
             if (!noteIntervalRef.current) noteIntervalRef.current = setInterval(spawnNote, 900);
         } else if (noteIntervalRef.current) {
@@ -186,6 +190,7 @@ export default function Scene11Music({
     const progressPct = (currentTime / totalDuration) * 100;
 
     useEffect(() => {
+        if (!isActive) return;
         if (!thumbRef.current) return;
         if (isPlaying) {
             const t = gsap.to(thumbRef.current, { scale: 1.2, duration: 0.6, repeat: -1, yoyo: true, ease: 'sine.inOut' });
@@ -195,7 +200,7 @@ export default function Scene11Music({
 
     return (
         <>
-            {onPrev && (
+            {isActive && onPrev && (
                 <div className={styles.navBtnWrapperLeft}>
                     <button className={`${styles.navBtn} ${styles.navBtnPrev}`} onClick={onPrev}>
                         <div className={styles.navBtnInner}>
@@ -209,7 +214,7 @@ export default function Scene11Music({
                 </div>
             )}
 
-            {onNext && (
+            {isActive && onNext && (
                 <div className={styles.navBtnWrapperRight}>
                     <button className={`${styles.navBtn} ${styles.navBtnNext}`} onClick={onNext}>
                         <div className={styles.navBtnInner}>

@@ -5,11 +5,12 @@ import gsap from 'gsap';
 import styles from '../styles/book.module.css';
 
 interface Scene10MathProps {
+    isActive?: boolean;
     onNext?: () => void;
     onPrev?: () => void;
 }
 
-export default function Scene10Math({ onNext, onPrev }: Scene10MathProps) {
+export default function Scene10Math({ onNext, onPrev, isActive = true }: Scene10MathProps) {
     const textLeftRef = useRef<HTMLDivElement>(null);
     const heartRef = useRef<SVGSVGElement>(null);
     const mathRef = useRef<HTMLDivElement>(null);
@@ -55,6 +56,7 @@ export default function Scene10Math({ onNext, onPrev }: Scene10MathProps) {
     }, []);
 
     useEffect(() => {
+        if (!isActive) return;
         const tl = gsap.timeline();
 
         // 1. Fade in left page text
@@ -163,7 +165,7 @@ export default function Scene10Math({ onNext, onPrev }: Scene10MathProps) {
 
     return (
         <>
-            {onPrev && (
+            {isActive && onPrev && (
                 <div className={styles.navBtnWrapperLeft}>
                     <button className={`${styles.navBtn} ${styles.navBtnPrev}`} onClick={onPrev}>
                         <div className={styles.navBtnInner}>
@@ -177,7 +179,7 @@ export default function Scene10Math({ onNext, onPrev }: Scene10MathProps) {
                 </div>
             )}
             
-            {onNext && (
+            {isActive && onNext && (
                 <div className={styles.navBtnWrapperRight}>
                     <button className={`${styles.navBtn} ${styles.navBtnNext}`} onClick={onNext}>
                         <div className={styles.navBtnInner}>
@@ -199,7 +201,7 @@ export default function Scene10Math({ onNext, onPrev }: Scene10MathProps) {
                             Date:
                         </div>
 
-                        <div ref={textLeftRef} style={{ marginTop: '4rem', paddingLeft: '1rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', fontFamily: 'var(--font-handwriting)', fontSize: '1.6rem', color: '#333', lineHeight: '1.6' }}>
+                        <div ref={textLeftRef} style={{ marginTop: '4rem', paddingLeft: '1rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', fontFamily: 'var(--font-handwriting-draft)', fontSize: '1.6rem', color: '#333', lineHeight: '1.6' }}>
                             <div>Hai sayang, aku punya</div>
                             <div>rumus matematika nih,</div>
                             <div>mau tau ga?</div>

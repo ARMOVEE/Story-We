@@ -5,6 +5,7 @@ import gsap from 'gsap';
 import styles from '../styles/book.module.css';
 
 interface Scene8PuzzleProps {
+    isActive?: boolean;
     onNext?: () => void;
     onPrev?: () => void;
 }
@@ -121,13 +122,16 @@ function buildForeverOvalPath(direction: ForeverDirection): string {
         + `A ${rx.toFixed(1)} ${ry} ${angleDeg.toFixed(1)} 1 1 ${p1x.toFixed(1)} ${p1y.toFixed(1)} Z`;
 }
 
-export default function Scene8Puzzle({ onNext, onPrev }: Scene8PuzzleProps) {
+export default function Scene8Puzzle({ onNext, onPrev, isActive = true }: Scene8PuzzleProps) {
     const pageRef = useRef<HTMLDivElement>(null);
     const textRef = useRef<HTMLDivElement>(null);
     const gridRef = useRef<HTMLDivElement>(null);
     const revaPathRef = useRef<SVGPathElement>(null);
     const foreverPathRef = useRef<SVGPathElement>(null);
     const borderPathRef = useRef<SVGPathElement>(null);
+    const orangRef = useRef<HTMLImageElement>(null);
+    const lampuRef = useRef<HTMLImageElement>(null);
+    const buketRef = useRef<HTMLImageElement>(null);
     const animatedWordsRef = useRef<Set<string>>(new Set());
     const wrongFlashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -149,7 +153,35 @@ export default function Scene8Puzzle({ onNext, onPrev }: Scene8PuzzleProps) {
     const puzzleSolved = foundWords.has('REVA') && foundWords.has('FOREVER');
 
     useEffect(() => {
+        if (!isActive) return;
         const tl = gsap.timeline();
+
+        // Lampu turun dari atas ke bawah
+        if (lampuRef.current) {
+            tl.fromTo(lampuRef.current,
+                { y: -80, opacity: 0 },
+                { y: 0, opacity: 1, duration: 1, ease: 'power2.out' },
+                0
+            );
+        }
+
+        // Orang naik dari bawah ke atas
+        if (orangRef.current) {
+            tl.fromTo(orangRef.current,
+                { y: 80, opacity: 0 },
+                { y: 0, opacity: 1, duration: 1, ease: 'power2.out' },
+                0.15
+            );
+        }
+
+        // Buket muncul di tengah — setelah lampu & orang selesai
+        if (buketRef.current) {
+            tl.fromTo(buketRef.current,
+                { scale: 0.7, opacity: 0 },
+                { scale: 1, opacity: 1, duration: 0.7, ease: 'back.out(1.6)' },
+                1.2
+            );
+        }
 
         if (textRef.current) {
             tl.fromTo(textRef.current.children,
@@ -174,6 +206,7 @@ export default function Scene8Puzzle({ onNext, onPrev }: Scene8PuzzleProps) {
     // Tidak ada lagi toggle opacity di satu container bersama, jadi REVA ketemu
     // tidak lagi otomatis menampakkan garis FOREVER.
     useEffect(() => {
+        if (!isActive) return;
         if (foundWords.has('REVA') && !animatedWordsRef.current.has('REVA') && revaPathRef.current) {
             animatedWordsRef.current.add('REVA');
             const len = revaPathRef.current.getTotalLength();
@@ -233,6 +266,7 @@ export default function Scene8Puzzle({ onNext, onPrev }: Scene8PuzzleProps) {
     };
 
     useEffect(() => {
+        if (!isActive) return;
         const handleUp = () => {
             setIsDragging(false);
             setSelection(current => {
@@ -311,7 +345,7 @@ export default function Scene8Puzzle({ onNext, onPrev }: Scene8PuzzleProps) {
                 </defs>
             </svg>
 
-            {onPrev && (
+            {isActive && onPrev && (
                 <div className={styles.navBtnWrapperLeft}>
                     <button className={`${styles.navBtn} ${styles.navBtnPrev}`} onClick={onPrev}>
                         <div className={styles.navBtnInner}>
@@ -345,6 +379,58 @@ export default function Scene8Puzzle({ onNext, onPrev }: Scene8PuzzleProps) {
                         <div style={{ position: 'absolute', top: '2.5rem', left: '2rem', fontFamily: 'var(--font-handwriting)', fontSize: '1.1rem', color: '#999' }}>
                             Date:
                         </div>
+
+                        {/* Lampu — muncul dari atas ke bawah */}
+                        <img
+                            ref={lampuRef}
+                            src="/animations/lampu.webp"
+                            alt=""
+                            style={{
+                                position: 'absolute',
+                                top: '1rem',
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                width: '280px',
+                                opacity: 0,
+                                zIndex: 2,
+                                pointerEvents: 'none',
+                            }}
+                        />
+
+                        {/* Orang — muncul dari bawah ke atas */}
+                        <img
+                            ref={orangRef}
+                            src="/animations/orang.webp"
+                            alt=""
+                            style={{
+                                position: 'absolute',
+                                bottom: '2rem',
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                width: '280px',
+                                opacity: 0,
+                                zIndex: 1,
+                                pointerEvents: 'none',
+                            }}
+                        />
+
+                        {/* Buket — di tengah halaman kiri, muncul setelah lampu & orang */}
+                        <img
+                            ref={buketRef}
+                            src="/animations/buket.webp"
+                            alt=""
+                            style={{
+                                position: 'absolute',
+                                top: '30%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                width: '300px',
+                                opacity: 0,
+                                zIndex: 3,
+                                pointerEvents: 'none',
+                            }}
+                        />
+
                         <div style={{ position: 'absolute', bottom: '3rem', right: '3rem', opacity: 0.6 }}>
                             <svg width="80" height="80" viewBox="0 0 100 100">
                                 <path d="M 30 50 C 30 20, 70 20, 70 50 C 70 80, 30 80, 30 50 Z" fill="none" stroke="#333" strokeWidth="2" strokeDasharray="5,5" />

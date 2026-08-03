@@ -6,6 +6,7 @@ import styles from '../styles/book.module.css';
 import FlowerButton from './FlowerButton';
 
 interface Scene5FlowersProps {
+    isActive?: boolean;
     onNext?: () => void;
     onPrev?: () => void;
 }
@@ -38,58 +39,7 @@ function HandDrawnFlower({ color, size = 20 }: { color: string; size?: number })
     );
 }
 
-// Organic hand-drawn wobbly outline that follows per-line text widths
-function HandDrawnParagraphCircle() {
-    return (
-        <svg
-            viewBox="0 0 280 195"
-            style={{
-                position: 'absolute',
-                top: '-18px',
-                left: '-22px',
-                width: 'calc(100% + 44px)',
-                height: 'calc(100% + 36px)',
-                pointerEvents: 'none',
-                zIndex: -1,
-            }}
-            preserveAspectRatio="none"
-        >
-            {/* Organic blob — each side follows the text width per line */}
-            <path
-                d="
-                    M 42 12
-                    C 80 5, 170 3, 225 10
-                    Q 252 14, 258 28
-                    C 263 38, 260 48, 255 55
-                    Q 248 62, 235 68
-                    C 240 74, 248 80, 250 90
-                    Q 252 100, 248 108
-                    C 244 116, 238 120, 260 126
-                    Q 272 132, 268 142
-                    C 264 152, 250 156, 240 160
-                    Q 228 165, 200 170
-                    C 165 178, 100 180, 60 175
-                    Q 30 172, 18 162
-                    C 8 152, 6 140, 10 130
-                    Q 14 120, 20 115
-                    C 12 108, 6 100, 5 90
-                    Q 3 78, 8 68
-                    C 12 58, 18 52, 14 44
-                    Q 10 36, 14 26
-                    C 18 16, 28 14, 42 12
-                    Z
-                "
-                fill="none"
-                stroke="#e74c3c"
-                strokeWidth="1.8"
-                strokeDasharray="6 5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                opacity="0.7"
-            />
-        </svg>
-    );
-}
+// (HandDrawnParagraphCircle dihapus — diganti gambar kertasLove.webp sebagai latar teks)
 
 function generateBorderFlowerPositions(count: number, yMin: number, yMax: number) {
     const flowers: { x: number; y: number; color: string; size: number; delay: number; rotation: number }[] = [];
@@ -110,12 +60,68 @@ const RIGHT_FLOWERS_TOP = generateBorderFlowerPositions(16, 2, 17);
 const RIGHT_FLOWERS_BOTTOM = generateBorderFlowerPositions(22, 75, 97);
 const RIGHT_FLOWERS = [...RIGHT_FLOWERS_TOP, ...RIGHT_FLOWERS_BOTTOM];
 
-export default function Scene5Flowers({ onNext, onPrev }: Scene5FlowersProps) {
+export default function Scene5Flowers({ onNext, onPrev, isActive = true }: Scene5FlowersProps) {
     const pageRef = useRef<HTMLDivElement>(null);
     const textRef = useRef<HTMLDivElement>(null);
     const rightFlowersRef = useRef<(HTMLDivElement | null)[]>([]);
+    const hangingRef = useRef<HTMLImageElement>(null);
+    const bingkaiRef = useRef<HTMLImageElement>(null);
+    const kiriRef = useRef<HTMLImageElement>(null);
+    const kananRef = useRef<HTMLImageElement>(null);
+
+    // Animasi khusus dekorasi halaman kiri — TIDAK digantungkan pada isActive,
+    // supaya gambar tidak pernah nyangkut di opacity:0 kalau scene ini sempat
+    // ter-render sebelum isActive jadi true.
+    useEffect(() => {
+        // Fallback pengaman: pastikan selalu terlihat walau animasi gagal jalan
+        gsap.set([hangingRef.current, bingkaiRef.current, kiriRef.current, kananRef.current], { opacity: 1 });
+
+        const tl = gsap.timeline();
+
+        // Gantungan love jatuh dari atas seperti digantung
+        if (hangingRef.current) {
+            tl.fromTo(hangingRef.current,
+                { opacity: 0, y: -40, rotation: -8 },
+                { opacity: 1, y: 0, rotation: 0, duration: 0.9, ease: 'bounce.out' }, 0.2
+            );
+            // ayunan pelan terus menerus setelah jatuh
+            tl.to(hangingRef.current, {
+                rotation: 6,
+                duration: 1.6,
+                ease: 'sine.inOut',
+                repeat: -1,
+                yoyo: true,
+                transformOrigin: 'top center',
+            }, 1.1);
+        }
+
+        // Bingkai foto muncul di tengah halaman
+        if (bingkaiRef.current) {
+            tl.fromTo(bingkaiRef.current,
+                { opacity: 0, scale: 0.85 },
+                { opacity: 1, scale: 1, duration: 0.8, ease: 'back.out(1.6)' }, 0.9
+            );
+        }
+
+        // Dua bunga bawah muncul saling berhadapan
+        if (kiriRef.current) {
+            tl.fromTo(kiriRef.current,
+                { opacity: 0, x: -30, scale: 0.7 },
+                { opacity: 1, x: 0, scale: 1, duration: 0.7, ease: 'back.out(1.7)' }, 0.6
+            );
+        }
+        if (kananRef.current) {
+            tl.fromTo(kananRef.current,
+                { opacity: 0, x: 30, scale: 0.7 },
+                { opacity: 1, x: 0, scale: 1, duration: 0.7, ease: 'back.out(1.7)' }, 0.6
+            );
+        }
+
+        return () => { tl.kill(); };
+    }, []);
 
     useEffect(() => {
+        if (!isActive) return;
         const tl = gsap.timeline();
 
         if (textRef.current) {
@@ -172,6 +178,74 @@ export default function Scene5Flowers({ onNext, onPrev }: Scene5FlowersProps) {
                     <div style={{ position: 'absolute', top: '2.5rem', left: '2rem', fontFamily: 'var(--font-handwriting)', fontSize: '1.1rem', color: '#999' }}>
                         Date:
                     </div>
+
+                    {/* Overlay khusus dekorasi — tidak mengubah style pageLeft asli sama sekali */}
+                    <div
+                        style={{
+                            position: 'absolute',
+                            inset: 0,
+                            zIndex: 6,
+                            pointerEvents: 'none',
+                        }}
+                    >
+                        {/* Gantungan love di posisi atas tengah, seolah tergantung */}
+                        <img
+                            ref={hangingRef}
+                            src="/animations/gantung%20love.webp"
+                            alt="gantungan love"
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                transformOrigin: 'top center',
+                                width: '100%',
+                                maxWidth: '380px',
+                            }}
+                        />
+
+                        {/* Bingkai foto di tengah halaman, mengisi area kosong */}
+                        <img
+                            ref={bingkaiRef}
+                            src="/animations/bingkai.webp"
+                            alt="bingkai foto"
+                            style={{
+                                position: 'absolute',
+                                top: '30%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                width: '200%',
+                                maxWidth: '500px',
+                            }}
+                        />
+
+                        {/* Dua bunga saling berhadapan di posisi bawah */}
+                        <div
+                            style={{
+                                position: 'absolute',
+                                bottom: '1.5rem',
+                                left: 0,
+                                right: 0,
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'flex-end',
+                                padding: '0 1.5rem',
+                            }}
+                        >
+                            <img
+                                ref={kiriRef}
+                                src="/animations/kiri.gif"
+                                alt="bunga kiri"
+                                style={{ width: '100px' }}
+                            />
+                            <img
+                                ref={kananRef}
+                                src="/animations/kanan.gif"
+                                alt="bunga kanan"
+                                style={{ width: '100px' }}
+                            />
+                        </div>
+                    </div>
                 </div>
 
                 <div
@@ -183,9 +257,9 @@ export default function Scene5Flowers({ onNext, onPrev }: Scene5FlowersProps) {
                         backgroundPosition: '0 40px',
                         display: 'flex',
                         flexDirection: 'column',
-                        alignItems: 'flex-start',
-                        justifyContent: 'flex-start',
-                        padding: '2.5rem 2rem 1.5rem 3rem',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '2.5rem 2rem 1.5rem 2rem',
                         boxSizing: 'border-box',
                         overflow: 'hidden',
                         position: 'relative',
@@ -198,7 +272,7 @@ export default function Scene5Flowers({ onNext, onPrev }: Scene5FlowersProps) {
                     <div
                         ref={textRef}
                         style={{
-                            marginTop: '5rem',
+                            marginTop: 0,
                             width: '100%',
                             fontFamily: 'var(--font-handwriting)',
                             color: '#333',
@@ -209,8 +283,30 @@ export default function Scene5Flowers({ onNext, onPrev }: Scene5FlowersProps) {
                             zIndex: 10,
                         }}
                     >
-                        <div style={{ position: 'relative', display: 'inline-block' }}>
-                            <HandDrawnParagraphCircle />
+                        <div
+                            style={{
+                                position: 'relative',
+                                display: 'inline-block',
+                                width: '380px',
+                                marginLeft: '2rem',
+                                padding: '2.6rem 3.6rem 4rem',
+                                boxSizing: 'border-box',
+                                textAlign: 'center',
+                            }}
+                        >
+                            <img
+                                src="/animations/kertasLove.webp"
+                                alt=""
+                                style={{
+                                    position: 'absolute',
+                                    inset: 0,
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'fill',
+                                    zIndex: -1,
+                                    pointerEvents: 'none',
+                                }}
+                            />
                             <p style={{ margin: 0 }}>Ini ulang tahun pertama</p>
                             <p style={{ margin: 0 }}>kita yang sama-sama</p>
                             <p style={{ margin: 0 }}>Aku dan kamu rayakan.</p>

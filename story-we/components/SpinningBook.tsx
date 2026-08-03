@@ -4,6 +4,152 @@ import React, { useState, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import styles from '../styles/book.module.css';
 
+// ── Transisi "liquid blob burst" — beberapa blob organik membesar
+//    bergantian dengan efek wobble, lalu semburan hati kecil pas layar
+//    tertutup penuh, baru mengecil lagi membuka scene baru. Murni
+//    CSS/GSAP, tidak butuh file video. ──
+const BLOB_COLORS = ['#ff8fb3', '#e8729a', '#d1567f', '#c94f77'];
+
+const HEART_PATH = 'M12 21s-6.7-4.35-9.3-8.1C1 10.6 1.4 7.4 4 5.6c2.1-1.4 4.7-.9 6.2 1 .6.7 1.1 1.5 1.8 1.5s1.2-.8 1.8-1.5c1.5-1.9 4.1-2.4 6.2-1 2.6 1.8 3 5 1.3 7.3C18.7 16.65 12 21 12 21z';
+
+function IrisTransitionOverlay({ active, onDone }: { active: boolean; onDone: () => void }) {
+    const overlayRef = useRef<HTMLDivElement>(null);
+    const blobRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const heartsRef = useRef<HTMLDivElement>(null);
+    const hasRun = useRef(false);
+
+    useEffect(() => {
+        if (!active || hasRun.current) return;
+        hasRun.current = true;
+
+        const overlay = overlayRef.current;
+        const blobs = blobRefs.current.filter(Boolean) as HTMLDivElement[];
+        const hearts = heartsRef.current;
+        if (!overlay || blobs.length === 0) return;
+
+        gsap.set(overlay, { display: 'block' });
+        gsap.set(blobs, { scale: 0, opacity: 1, borderRadius: '50%' });
+
+        const diagonal = Math.sqrt(window.innerWidth ** 2 + window.innerHeight ** 2);
+        const targetScale = (diagonal / 40) * 1.25;
+
+        const tl = gsap.timeline();
+
+        // Fase 1: blob-blob membesar bergantian (stagger), bikin efek "menyusul"
+        // bukan bareng-bareng, jadi kelihatan lebih dinamis/cair.
+        blobs.forEach((blob, i) => {
+            tl.to(blob, {
+                scale: targetScale,
+                duration: 0.55,
+                ease: 'power2.in',
+            }, i * 0.08);
+
+            // Sedikit wobble pada border-radius selama membesar → kesan cair
+            tl.to(blob, {
+                borderRadius: '46% 54% 60% 40% / 55% 45% 55% 45%',
+                duration: 0.55,
+                ease: 'power1.inOut',
+            }, i * 0.08);
+        });
+
+        // Fase 2: layar tertutup penuh — semburkan hati kecil, lalu ganti scene
+        if (hearts) {
+            const heartEls = hearts.children;
+            gsap.set(heartEls, { opacity: 0, scale: 0 });
+            tl.to(heartEls, {
+                opacity: 1,
+                scale: (i: number) => 0.6 + Math.random() * 0.6,
+                x: (i: number) => (Math.random() - 0.5) * 260,
+                y: (i: number) => -40 - Math.random() * 160,
+                rotation: (i: number) => (Math.random() - 0.5) * 60,
+                duration: 0.5,
+                stagger: 0.04,
+                ease: 'back.out(1.8)',
+            }, '+=0.05');
+        }
+
+        tl.call(() => onDone());
+        tl.to({}, { duration: 0.35 });
+
+        if (hearts) {
+            tl.to(hearts.children, {
+                opacity: 0,
+                duration: 0.25,
+            }, '<');
+        }
+
+        // Fase 3: blob-blob mengecil lagi (urutan dibalik), membuka scene baru
+        [...blobs].reverse().forEach((blob, i) => {
+            tl.to(blob, {
+                scale: 0,
+                borderRadius: '50%',
+                duration: 0.5,
+                ease: 'power2.out',
+            }, `>-${i === 0 ? 0 : 0.4}`);
+        });
+
+        tl.set(overlay, { display: 'none' });
+    }, [active, onDone]);
+
+    return (
+        <div
+            ref={overlayRef}
+            style={{
+                display: 'none',
+                position: 'fixed',
+                inset: 0,
+                zIndex: 9999,
+                pointerEvents: 'none',
+                overflow: 'hidden',
+            }}
+        >
+            {BLOB_COLORS.map((color, i) => (
+                <div
+                    key={i}
+                    ref={(el) => { blobRefs.current[i] = el; }}
+                    style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        width: '40px',
+                        height: '40px',
+                        marginTop: '-20px',
+                        marginLeft: '-20px',
+                        background: `radial-gradient(circle, ${color} 0%, ${color} 100%)`,
+                        transform: 'scale(0)',
+                        willChange: 'transform, border-radius',
+                    }}
+                />
+            ))}
+
+            {/* Semburan hati kecil di tengah layar saat tertutup penuh */}
+            <div
+                ref={heartsRef}
+                style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    width: 0,
+                    height: 0,
+                    zIndex: 2,
+                }}
+            >
+                {Array.from({ length: 10 }).map((_, i) => (
+                    <svg
+                        key={i}
+                        viewBox="0 0 24 24"
+                        width="26"
+                        height="26"
+                        style={{ position: 'absolute', left: '-13px', top: '-13px' }}
+                    >
+                        <path d={HEART_PATH} fill="#fff" opacity="0.95" />
+                    </svg>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 interface SpinningBookProps {
     onClick?: () => void;
 }
@@ -86,6 +232,7 @@ function LetterContent({
 export default function SpinningBook({ onClick }: SpinningBookProps) {
     const [clicked, setClicked] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
+    const [transitionActive, setTransitionActive] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const holderRef = useRef<HTMLDivElement>(null);
     const frontRef = useRef<HTMLDivElement>(null);
@@ -108,7 +255,6 @@ export default function SpinningBook({ onClick }: SpinningBookProps) {
         gsap.set(holderRef.current, { rotationX: 16, rotationY: 0, rotationZ: 0 });
         startSpinning();
 
-        // Corner image starts fully hidden, tucked toward bottom-right off-screen
         if (cornerImageRef.current) {
             gsap.set(cornerImageRef.current, {
                 opacity: 0,
@@ -181,7 +327,6 @@ export default function SpinningBook({ onClick }: SpinningBookProps) {
         });
     };
 
-    // Triggered when cursor enters the "CLICK HERE" button
     const handleButtonHoverStart = () => {
         if (!cornerImageRef.current || clicked) return;
         gsap.killTweensOf(cornerImageRef.current);
@@ -196,7 +341,6 @@ export default function SpinningBook({ onClick }: SpinningBookProps) {
         });
     };
 
-    // Triggered when cursor leaves the "CLICK HERE" button
     const handleButtonHoverEnd = () => {
         if (!cornerImageRef.current || clicked) return;
         gsap.killTweensOf(cornerImageRef.current);
@@ -215,145 +359,85 @@ export default function SpinningBook({ onClick }: SpinningBookProps) {
         if (clicked || !holderRef.current || !frontRef.current || !wrapperRef.current) return;
         setClicked(true);
 
-        spinTweenRef.current?.kill();
-        gsap.killTweensOf(holderRef.current);
-        gsap.killTweensOf(frontRef.current);
-        gsap.killTweensOf(pagesRef.current);
-
-        const currentRotY = gsap.getProperty(holderRef.current, "rotationY") as number;
-        const targetRotY = Math.round(currentRotY / 360) * 360;
-
-        const tl = gsap.timeline({
-            onComplete: () => {
-                onClick?.();
-            }
-        });
-
-        // 1. Reset tilt (face front) and CLOSE the book quickly
-        tl.to(holderRef.current, {
-            rotationX: 0,
-            rotationY: targetRotY,
-            rotationZ: 0,
-            scale: 1,
-            duration: 0.5,
-            ease: "power2.inOut"
-        }, 0);
-
-        tl.to(frontRef.current, {
-            rotationY: 0,
-            duration: 0.5,
-            ease: "power2.inOut"
-        }, "<");
-
-        // 2. Zoom in closer strongly after a dramatic pause
-        tl.to(holderRef.current, {
-            scale: 3,
-            duration: 1.2,
-            ease: "power2.inOut"
-        }, "+=0.15");
-
-        // 3. Open the front cover fully while zooming
-        gsap.set(frontRef.current, { transformOrigin: "left center" });
-        tl.to(frontRef.current, {
-            rotationY: -160,
-            duration: 1.0,
-            ease: "power2.inOut"
-        }, "-=1.0");
-
-        // 4. Flip multiple pages sequentially
-        pagesRef.current.forEach((page, i) => {
-            if (!page) return;
-            gsap.set(page, { transformOrigin: "left center" });
-            tl.to(page, {
-                rotationY: -155 + (i * 4),
-                duration: 1.0,
-                ease: "power2.inOut"
-            }, `-=${1.0 - (i * 0.05)}`);
-        });
-
-        // 5. Corner image fades out as the scene transitions
         if (cornerImageRef.current) {
-            tl.to(cornerImageRef.current, {
-                opacity: 0,
-                scale: 0.7,
-                duration: 0.5,
-                ease: "power1.in",
-            }, "-=0.8");
+            gsap.to(cornerImageRef.current, { opacity: 0, duration: 0.3, ease: 'power1.in' });
         }
 
-        // 6. Fade out to transition into Scene 2
-        tl.to(wrapperRef.current, {
-            opacity: 0,
-            duration: 0.6,
-            ease: "power2.inOut"
-        }, "-=0.5");
+        setTransitionActive(true);
+    };
+
+    const handleTransitionDone = () => {
+        onClick?.();
     };
 
     return (
-        <div className={styles.spinWrapper} ref={wrapperRef}>
-            <div className={styles.bg}></div>
-            <div className={styles.container}>
-                <div
-                    className={styles.boxHolder}
-                    ref={holderRef}
-                    onMouseEnter={handleMouseEnter}
-                    onMouseLeave={handleMouseLeave}
-                    role="presentation"
-                    aria-label="Buku Berputar"
-                >
-                    {[...Array(6)].map((_, i) => (
-                        <div
-                            key={`page-${i}`}
-                            className={styles.boxPage}
-                            ref={(el) => { pagesRef.current[i] = el; }}
-                            style={{
-                                transform: `translate3d(calc(var(--box-width) * -0.5), calc(var(--box-height) * -0.5), calc(var(--box-depth) * -${(i + 1) * 0.15}))`
-                            }}
-                        >
-                            {i === 0 && (
-                                <LetterContent
-                                    isHovered={isHovered}
-                                    onComplete={() => { }}
-                                    onNext={handleNext}
-                                    onButtonHoverStart={handleButtonHoverStart}
-                                    onButtonHoverEnd={handleButtonHoverEnd}
-                                />
-                            )}
-                        </div>
-                    ))}
+        <>
+            <div className={styles.spinWrapper} ref={wrapperRef}>
+                <div className={styles.bg}></div>
+                <div className={styles.container}>
+                    <div
+                        className={styles.boxHolder}
+                        ref={holderRef}
+                        onMouseEnter={handleMouseEnter}
+                        onMouseLeave={handleMouseLeave}
+                        role="presentation"
+                        aria-label="Buku Berputar"
+                    >
+                        {[...Array(6)].map((_, i) => (
+                            <div
+                                key={`page-${i}`}
+                                className={styles.boxPage}
+                                ref={(el) => { pagesRef.current[i] = el; }}
+                                style={{
+                                    transform: `translate3d(calc(var(--box-width) * -0.5), calc(var(--box-height) * -0.5), calc(var(--box-depth) * -${(i + 1) * 0.15}))`
+                                }}
+                            >
+                                {i === 0 && (
+                                    <LetterContent
+                                        isHovered={isHovered}
+                                        onComplete={() => { }}
+                                        onNext={handleNext}
+                                        onButtonHoverStart={handleButtonHoverStart}
+                                        onButtonHoverEnd={handleButtonHoverEnd}
+                                    />
+                                )}
+                            </div>
+                        ))}
 
-                    <div className={styles.boxFront} ref={frontRef}></div>
-                    <div className={styles.boxSideLeft}></div>
-                    <div className={styles.boxSideRight}></div>
-                    <div className={styles.boxTop}></div>
-                    <div className={styles.boxBottom}></div>
-                    <div className={styles.boxBack}></div>
+                        <div className={styles.boxFront} ref={frontRef}></div>
+                        <div className={styles.boxSideLeft}></div>
+                        <div className={styles.boxSideRight}></div>
+                        <div className={styles.boxTop}></div>
+                        <div className={styles.boxBottom}></div>
+                        <div className={styles.boxBack}></div>
+                    </div>
+                </div>
+
+                <div
+                    ref={cornerImageRef}
+                    style={{
+                        position: 'fixed',
+                        bottom: '2rem',
+                        right: '2rem',
+                        zIndex: 200,
+                        pointerEvents: 'none',
+                        opacity: 0,
+                    }}
+                >
+                    <img
+                        src="/animations/spinningbook.png"
+                        alt=""
+                        style={{
+                            maxWidth: '180px',
+                            width: '30vw',
+                            height: 'auto',
+                            filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.35))',
+                        }}
+                    />
                 </div>
             </div>
 
-            {/* Corner reveal image — always mounted, hidden via opacity until button is hovered */}
-            <div
-                ref={cornerImageRef}
-                style={{
-                    position: 'fixed',
-                    bottom: '2rem',
-                    right: '2rem',
-                    zIndex: 200,
-                    pointerEvents: 'none',
-                    opacity: 0,
-                }}
-            >
-                <img
-                    src="/animations/spinningbook.png"
-                    alt=""
-                    style={{
-                        maxWidth: '180px',
-                        width: '30vw',
-                        height: 'auto',
-                        filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.35))',
-                    }}
-                />
-            </div>
-        </div>
+            <IrisTransitionOverlay active={transitionActive} onDone={handleTransitionDone} />
+        </>
     );
 }

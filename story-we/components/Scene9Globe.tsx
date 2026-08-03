@@ -5,39 +5,116 @@ import gsap from 'gsap';
 import styles from '../styles/book.module.css';
 
 interface Scene9GlobeProps {
+    isActive?: boolean;
     onNext?: () => void;
     onPrev?: () => void;
 }
 
-export default function Scene9Globe({ onNext, onPrev }: Scene9GlobeProps) {
-    const textLeftRef = useRef<HTMLDivElement>(null);
+export default function Scene9Globe({ onNext, onPrev, isActive = true }: Scene9GlobeProps) {
     const textRightRef = useRef<HTMLDivElement>(null);
-
-    const globeRef = useRef<SVGSVGElement>(null);
-    // Two figures (male + female) holding hands. Outer legs (the ones pointing
-    // away from each other) swing together; inner legs (pointing toward each
-    // other) swing together — reads as a couple walking in step.
-    const maleOuterLegRef = useRef<SVGLineElement>(null);
-    const maleInnerLegRef = useRef<SVGLineElement>(null);
-    const femaleOuterLegRef = useRef<SVGLineElement>(null);
-    const femaleInnerLegRef = useRef<SVGLineElement>(null);
-    // Only the free (outer) arms swing — the inner arms are the clasped hands
-    // and stay put so the "holding hands" reads clearly.
-    const maleFreeArmRef = useRef<SVGLineElement>(null);
-    const femaleFreeArmRef = useRef<SVGLineElement>(null);
-    const bodyRef = useRef<SVGGElement>(null);
-    const bubbleRef = useRef<HTMLDivElement>(null);
     const underlineRef = useRef<SVGSVGElement>(null);
     const circleRef = useRef<SVGSVGElement>(null);
+    const globeRef = useRef<HTMLImageElement>(null);
+    const hangRef = useRef<HTMLImageElement>(null);
+
+    // Left page: camera + photo frame
+    const kameraRef = useRef<HTMLImageElement>(null);
+    const flashRef = useRef<HTMLDivElement>(null);
+    const frameFotoRef = useRef<HTMLImageElement>(null);
+    const queenRef = useRef<HTMLImageElement>(null);
+    const favoriteRef = useRef<HTMLImageElement>(null);
 
     useEffect(() => {
+        if (!isActive) return;
         const tl = gsap.timeline();
 
-        // Left text animation
-        if (textLeftRef.current) {
-            tl.fromTo(textLeftRef.current.children,
-                { opacity: 0, y: 10, rotation: -2 },
-                { opacity: 1, y: 0, rotation: 0, duration: 0.8, stagger: 0.4, ease: 'power2.out' }
+        // Queen (top-left corner of kamera) and Favorite (top-right corner
+        // of kamera) pop in before the camera itself.
+        if (queenRef.current) {
+            tl.fromTo(queenRef.current,
+                { opacity: 0, scale: 0.6, rotation: -15 },
+                { 
+                    opacity: 1, 
+                    scale: 1, 
+                    rotation: 0, 
+                    duration: 0.6, 
+                    ease: 'back.out(2)',
+                    onComplete: () => {
+                        gsap.to(queenRef.current, {
+                            rotation: 18,
+                            duration: 0.4,
+                            ease: 'steps(3)',
+                            repeat: -1,
+                            yoyo: true,
+                            transformOrigin: '50% 50%'
+                        });
+                    }
+                }
+            );
+        }
+        if (favoriteRef.current) {
+            tl.fromTo(favoriteRef.current,
+                { opacity: 0, scale: 0.6, rotation: 15 },
+                { 
+                    opacity: 1, 
+                    scale: 1, 
+                    rotation: 0, 
+                    duration: 0.6, 
+                    ease: 'back.out(2)',
+                    onComplete: () => {
+                        gsap.to(favoriteRef.current, {
+                            rotation: -18,
+                            duration: 0.4,
+                            ease: 'steps(3)',
+                            repeat: -1,
+                            yoyo: true,
+                            transformOrigin: '50% 50%'
+                        });
+                    }
+                },
+                "<"
+            );
+        }
+
+        // Kamera pops in below the handwritten text
+        if (kameraRef.current) {
+            tl.fromTo(kameraRef.current,
+                { opacity: 0, scale: 0.7 },
+                { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(2)' }
+            );
+
+            // "Crek" — quick shutter-click punch: camera snaps in/out fast
+            tl.to(kameraRef.current, {
+                scale: 0.9,
+                duration: 0.07,
+                yoyo: true,
+                repeat: 1,
+                ease: 'power1.inOut'
+            });
+        }
+
+        // Flash burst right at the camera lens (center), on the "crek" moment
+        if (flashRef.current) {
+            tl.fromTo(flashRef.current,
+                { opacity: 0, scale: 0.3 },
+                { opacity: 1, scale: 1.6, duration: 0.12, ease: 'power1.out' },
+                "<"
+            );
+            tl.to(flashRef.current, { opacity: 0, scale: 2, duration: 0.35, ease: 'power1.out' });
+        }
+
+        // Frame foto ejects from behind the camera like a Polaroid sliding
+        // out of the slot: it's progressively revealed top-to-bottom while
+        // drifting down slightly, instead of just fading in already fully
+        // visible. The reveal is driven by `clip-path` rather than
+        // `height` — clip-path is GPU-composited so it stays smooth,
+        // whereas animating height forces a layout recalculation on every
+        // frame and looks janky.
+        if (frameFotoRef.current) {
+            tl.fromTo(frameFotoRef.current,
+                { y: -30, clipPath: 'inset(0% 0% 100% 0%)' },
+                { y: 0, clipPath: 'inset(0% 0% 0% 0%)', duration: 1.8, ease: 'sine.out' },
+                "+=0.15"
             );
         }
 
@@ -62,97 +139,48 @@ export default function Scene9Globe({ onNext, onPrev }: Scene9GlobeProps) {
             );
         }
 
-        // Globe and character pop in
-        tl.fromTo([globeRef.current, bodyRef.current],
-            { opacity: 0, scale: 0 },
-            { opacity: 1, scale: 1, duration: 0.8, ease: 'back.out(1.5)', transformOrigin: 'center bottom' },
-            "-=0.3"
-        );
-
-        // Walking cycle — using exact pixel transformOrigins (hips) for perfect anchoring
-        if (maleOuterLegRef.current && femaleOuterLegRef.current) {
-            gsap.fromTo(maleOuterLegRef.current,
-                { rotation: -25 },
-                { rotation: 25, transformOrigin: '22px 34px', repeat: -1, yoyo: true, duration: 0.35, ease: 'sine.inOut' }
-            );
-            gsap.fromTo(femaleOuterLegRef.current,
-                { rotation: -25 },
-                { rotation: 25, transformOrigin: '52px 34px', repeat: -1, yoyo: true, duration: 0.35, ease: 'sine.inOut' }
-            );
-        }
-        if (maleInnerLegRef.current && femaleInnerLegRef.current) {
-            gsap.fromTo(maleInnerLegRef.current,
-                { rotation: 25 },
-                { rotation: -25, transformOrigin: '22px 34px', repeat: -1, yoyo: true, duration: 0.35, ease: 'sine.inOut' }
-            );
-            gsap.fromTo(femaleInnerLegRef.current,
-                { rotation: 25 },
-                { rotation: -25, transformOrigin: '52px 34px', repeat: -1, yoyo: true, duration: 0.35, ease: 'sine.inOut' }
-            );
-        }
-        // Free arms swinging
-        if (maleFreeArmRef.current) {
-            gsap.fromTo(maleFreeArmRef.current,
-                { rotation: 20 },
-                { rotation: -20, transformOrigin: '22px 22px', repeat: -1, yoyo: true, duration: 0.35, ease: 'sine.inOut' }
-            );
-        }
-        if (femaleFreeArmRef.current) {
-            gsap.fromTo(femaleFreeArmRef.current,
-                { rotation: -20 },
-                { rotation: 20, transformOrigin: '52px 22px', repeat: -1, yoyo: true, duration: 0.35, ease: 'sine.inOut' }
-            );
-        }
-        // Tiny body bob so each "step" reads as a step (bobs twice per full leg swing)
-        if (bodyRef.current) {
-            gsap.fromTo(bodyRef.current,
-                { y: 0 },
-                { y: -2.5, repeat: -1, yoyo: true, duration: 0.175, ease: 'sine.inOut' }
-            );
-        }
-
-        // Globe rotates opposite the walk direction — reads as the character
-        // pushing the world backward under their own feet as they step forward.
+        // Right side (Globe and Hang)
         if (globeRef.current) {
+            tl.fromTo(globeRef.current,
+                { opacity: 0, scale: 0.5 },
+                { opacity: 1, scale: 1, duration: 1, ease: 'back.out(1.7)' },
+                "-=0.5"
+            );
+
+            // Continuous rotation for globe
             gsap.to(globeRef.current, {
-                rotation: -360,
-                transformOrigin: 'center center',
+                rotation: 360,
+                duration: 20,
                 repeat: -1,
-                duration: 5,
                 ease: 'none'
             });
         }
 
-        // Speech bubble — pops in suddenly like a surprised shout, after a beat of walking
-        if (bubbleRef.current) {
-            tl.fromTo(bubbleRef.current,
-                { opacity: 0, scale: 0, rotation: -8, transformOrigin: '85% 100%' },
-                { opacity: 1, scale: 1, rotation: 0, duration: 0.45, ease: 'back.out(3)' },
-                "+=1.2"
+        if (hangRef.current) {
+            tl.fromTo(hangRef.current,
+                { opacity: 0, y: -50 },
+                { opacity: 1, y: 0, duration: 0.8, ease: 'bounce.out' },
+                "-=0.2"
             );
-            // Quick little shake right after it appears, for the "shout" feel
-            tl.fromTo(bubbleRef.current,
-                { x: 0 },
-                { x: 3, duration: 0.06, repeat: 5, yoyo: true, ease: 'none' }
-            );
-
-            // Then settle into a slow float
-            gsap.to(bubbleRef.current, {
-                y: -6,
-                repeat: -1,
-                yoyo: true,
-                duration: 1.6,
-                ease: 'sine.inOut',
-                delay: 3.5
-            });
         }
 
-        return () => { tl.kill(); };
-    }, []);
+        return () => {
+            tl.kill();
+            if (globeRef.current) {
+                gsap.killTweensOf(globeRef.current);
+            }
+            if (queenRef.current) {
+                gsap.killTweensOf(queenRef.current);
+            }
+            if (favoriteRef.current) {
+                gsap.killTweensOf(favoriteRef.current);
+            }
+        };
+    }, [isActive]);
 
     return (
         <>
-            {onPrev && (
+            {isActive && onPrev && (
                 <div className={styles.navBtnWrapperLeft}>
                     <button className={`${styles.navBtn} ${styles.navBtnPrev}`} onClick={onPrev}>
                         <div className={styles.navBtnInner}>
@@ -166,7 +194,7 @@ export default function Scene9Globe({ onNext, onPrev }: Scene9GlobeProps) {
                 </div>
             )}
 
-            {onNext && (
+            {isActive && onNext && (
                 <div className={styles.navBtnWrapperRight}>
                     <button className={`${styles.navBtn} ${styles.navBtnNext}`} onClick={onNext}>
                         <div className={styles.navBtnInner}>
@@ -188,33 +216,96 @@ export default function Scene9Globe({ onNext, onPrev }: Scene9GlobeProps) {
                             Date:
                         </div>
 
-                        <div ref={textLeftRef} style={{ marginTop: '4rem', paddingLeft: '1rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                            <div style={{ fontFamily: 'var(--font-handwriting)', fontSize: '2.5rem', fontWeight: 'bold', color: '#333', letterSpacing: '2px', transform: 'rotate(-2deg)' }}>
-                                HEHEHE
+                        {/* Kamera + Frame Foto: camera pops in, does a quick shutter
+                            "crek" (punch + flash), then the photo ejects slowly from
+                            behind the camera (like the reference gif's slot-eject
+                            motion) — a clipping wrapper reveals the photo top-to-bottom
+                            as it drifts down, instead of just fading/sliding in whole. */}
+                        <div style={{ marginTop: '0', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                            <div style={{ position: 'relative', zIndex: 2 }}>
+                                <img
+                                    ref={kameraRef}
+                                    src="/animations/kamera.webp"
+                                    alt="Kamera"
+                                    style={{ width: '175px', objectFit: 'contain', display: 'block' }}
+                                />
+                                {/* Queen: sits at the top-left corner of kamera.webp */}
+                                <img
+                                    ref={queenRef}
+                                    src="/animations/queen.webp"
+                                    alt="Queen"
+                                    style={{
+                                        position: 'absolute',
+                                        top: '-45px',
+                                        left: '-60px',
+                                        width: '150px',
+                                        objectFit: 'contain',
+                                        zIndex: 3
+                                    }}
+                                />
+                                {/* Favorite: sits at the top-right corner of kamera.webp */}
+                                <img
+                                    ref={favoriteRef}
+                                    src="/animations/favorite.webp"
+                                    alt="Favorite"
+                                    style={{
+                                        position: 'absolute',
+                                        top: '-5px',
+                                        right: '-100px',
+                                        width: '250px',
+                                        objectFit: 'contain',
+                                        zIndex: 3
+                                    }}
+                                />
+                                {/* Flash: a small circular burst centered on the camera
+                                    (the lens), not a full overlay — reads as an actual
+                                    camera flash rather than a screen-wide whiteout. */}
+                                <div
+                                    ref={flashRef}
+                                    style={{
+                                        position: 'absolute',
+                                        top: '50%',
+                                        left: '50%',
+                                        width: '45%',
+                                        height: '45%',
+                                        transform: 'translate(-50%, -50%)',
+                                        borderRadius: '50%',
+                                        background: 'radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.4) 55%, rgba(255,255,255,0) 75%)',
+                                        opacity: 0,
+                                        pointerEvents: 'none'
+                                    }}
+                                />
                             </div>
-                            <div style={{ fontFamily: 'var(--font-handwriting)', fontSize: '1.8rem', color: '#333', marginTop: '1rem' }}>
-                                Aku tulisin ya
-                            </div>
-                            <div style={{ fontFamily: 'var(--font-handwriting)', fontSize: '1.6rem', color: '#333' }}>
-                                Kata-Kata nya....
-                            </div>
+
+                            {/* Photo emerges from behind the camera slot: revealed via
+                                clip-path (GPU-composited, smooth) while drifting down. */}
+                            <img
+                                ref={frameFotoRef}
+                                src="/animations/frameFoto.webp"
+                                alt="Frame Foto"
+                                style={{
+                                    width: '220px',
+                                    marginTop: '-95px',
+                                    objectFit: 'contain',
+                                    display: 'block',
+                                    position: 'relative',
+                                    zIndex: 1
+                                }}
+                            />
                         </div>
                     </div>
                 </div>
 
                 {/* ── RIGHT PAGE ── */}
                 <div className={`${styles.dummyPage} ${styles.linedPage}`} style={{ zIndex: 10 }}>
-                    <div className={styles.pageContent} style={{ position: 'relative' }}>
+                    <div className={styles.pageContent} style={{ position: 'relative', display: 'flex', flexDirection: 'column' }}>
                         <div style={{ position: 'absolute', top: '2.5rem', left: '2rem', fontFamily: 'var(--font-handwriting)', fontSize: '1.1rem', color: '#999' }}>
                             Date:
                         </div>
 
-                        {/* Text column + illustration column live side by side in a flex row.
-                            This keeps the illustration fully inside the page's own box —
-                            no negative offsets that can push it past the page edge. */}
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginTop: '2.5rem', paddingLeft: '2rem', paddingRight: '1.5rem' }}>
-
-                            <div ref={textRightRef} style={{ flex: '1 1 auto', fontFamily: 'var(--font-handwriting)', fontSize: '1.4rem', color: '#333', lineHeight: '2.2' }}>
+                        <div style={{ marginTop: '2.5rem', paddingLeft: '2rem', paddingRight: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                            {/* Text from before */}
+                            <div ref={textRightRef} style={{ fontFamily: 'var(--font-handwriting)', fontSize: '1.4rem', color: '#333', lineHeight: '2.2', position: 'relative', zIndex: 20 }}>
                                 <div style={{ paddingLeft: '1.5rem' }}>Bumi memiliki</div>
                                 <div style={{ paddingLeft: '0.5rem' }}>banyak orang</div>
 
@@ -246,91 +337,14 @@ export default function Scene9Globe({ onNext, onPrev }: Scene9GlobeProps) {
                                 <div style={{ paddingLeft: '3rem' }}>satunya</div>
                             </div>
 
-                            {/* Illustration column: speech bubble stacked directly above the
-                                character-on-globe group. Normal flow (flex column), not
-                                absolute — so it can never spill past the page edge or get
-                                clipped, and everything scales together as one block. */}
-                            <div style={{ flex: '0 0 170px', display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '1.5rem' }}>
-
-                                {/* Couple-on-globe group: a single relative box sized so the
-                                    pair's feet always land right on the globe's top edge. */}
-                                <div style={{ position: 'relative', width: '150px', height: '150px', marginTop: '80px' }}>
-                                    
-                                    {/* Speech bubble — sudden shout, positioned above male character */}
-                                    <div ref={bubbleRef} style={{ position: 'absolute', top: '-90px', left: '-30px', zIndex: 15 }}>
-                                        <svg width="140" height="90" viewBox="0 0 140 90" style={{ overflow: 'visible' }}>
-                                            {/* Jagged "shout" bubble outline pointing to the boy (at x=52 in wrapper, tail points there) */}
-                                            <path
-                                                d="M 25 25 L 15 10 L 40 20 L 55 5 L 75 18 L 95 8 L 105 22 L 125 15 L 120 35 L 135 45 L 115 55 L 125 70 L 100 60 L 90 75 L 75 62 L 52 88 L 48 65 L 25 75 L 20 55 L 5 45 L 15 35 Z"
-                                                fill="#ffffff" stroke="#333" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"
-                                            />
-                                            <text x="70" y="42" fontFamily="var(--font-handwriting)" fontSize="14" fontWeight="bold" textAnchor="middle" fill="#e74c3c">
-                                                AKU SAYANG
-                                            </text>
-                                            <text x="70" y="58" fontFamily="var(--font-handwriting)" fontSize="14" fontWeight="bold" textAnchor="middle" fill="#e74c3c">
-                                                REVA!
-                                            </text>
-                                        </svg>
-                                    </div>
-
-                                    {/* Globe — large, colored, hand-drawn wobbly edge */}
-                                    <svg
-                                        ref={globeRef}
-                                        width="130"
-                                        height="130"
-                                        viewBox="0 0 100 100"
-                                        style={{ position: 'absolute', left: '10px', bottom: '0' }}
-                                    >
-                                        <path 
-                                            d="M 50 5 C 75 3, 97 22, 95 50 C 93 76, 75 97, 50 95 C 26 93, 3 76, 5 50 C 7 24, 26 7, 50 5 Z" 
-                                            fill="#aed4f7" stroke="#333" strokeWidth="2.5" strokeLinejoin="round" 
-                                        />
-                                        <path d="M 14 32 C 26 18, 46 22, 44 38 C 42 52, 20 54, 12 44 C 8 40, 10 36, 14 32 Z" fill="#7fc47f" stroke="#333" strokeWidth="1.5" strokeLinejoin="round" />
-                                        <path d="M 55 10 C 72 6, 90 18, 84 34 C 78 48, 58 46, 52 32 C 48 22, 48 14, 55 10 Z" fill="#7fc47f" stroke="#333" strokeWidth="1.5" strokeLinejoin="round" />
-                                        <path d="M 26 58 C 42 54, 60 64, 54 80 C 48 94, 26 96, 18 82 C 12 72, 16 62, 26 58 Z" fill="#7fc47f" stroke="#333" strokeWidth="1.5" strokeLinejoin="round" />
-                                        <path d="M 70 55 C 86 58, 92 74, 80 82 C 70 88, 58 78, 60 66 C 61 60, 65 56, 70 55 Z" fill="#7fc47f" stroke="#333" strokeWidth="1.5" strokeLinejoin="round" />
-                                        <path d="M 20 30 Q 35 45, 30 60 M 60 15 Q 68 30, 62 42 M 30 68 Q 45 72, 55 82" fill="none" stroke="#3f7fc7" strokeWidth="1.2" opacity="0.5" />
-                                    </svg>
-
-                                    {/* Couple — shifted up (top: -23px) so their feet (at y=52) rest exactly 
-                                        on the globe's top edge (at y=26.5 relative to the 150x150 wrapper) */}
-                                    <div style={{ position: 'absolute', left: '50%', top: '-23px', transform: 'translateX(-50%)', zIndex: 8 }}>
-                                        <svg width="74" height="52" viewBox="0 0 74 52" style={{ overflow: 'visible' }}>
-                                            {/* Action lines above their heads — surprised/exclaiming */}
-                                            <path d="M 30 4 L 26 -5 M 37 1 L 37 -7 M 44 4 L 48 -5" fill="none" stroke="#f1c40f" strokeWidth="2" strokeLinecap="round" />
-
-                                            <g ref={bodyRef}>
-                                                {/* ── Male figure (left) ── */}
-                                                <circle cx="22" cy="11" r="5.5" fill="none" stroke="#333" strokeWidth="2.2" />
-                                                <line x1="22" y1="16.5" x2="22" y2="34" stroke="#333" strokeWidth="2.2" strokeLinecap="round" />
-                                                {/* free arm (swings) */}
-                                                <line ref={maleFreeArmRef} x1="22" y1="22" x2="22" y2="34" stroke="#333" strokeWidth="2.2" strokeLinecap="round" />
-                                                {/* hand held toward partner (fixed) */}
-                                                <line x1="22" y1="23" x2="34" y2="25" stroke="#333" strokeWidth="2.2" strokeLinecap="round" />
-                                                {/* legs (straight down initially, swung via GSAP) */}
-                                                <line ref={maleOuterLegRef} x1="22" y1="34" x2="22" y2="52" stroke="#333" strokeWidth="2.2" strokeLinecap="round" />
-                                                <line ref={maleInnerLegRef} x1="22" y1="34" x2="22" y2="52" stroke="#333" strokeWidth="2.2" strokeLinecap="round" />
-
-                                                {/* ── Clasped hands — small joining mark so it reads clearly ── */}
-                                                <circle cx="37" cy="25" r="2" fill="#333" />
-
-                                                {/* ── Female figure (right) ── */}
-                                                <circle cx="52" cy="11" r="5.5" fill="none" stroke="#333" strokeWidth="2.2" />
-                                                {/* small hair bow, to distinguish at a glance */}
-                                                <path d="M 52 5.5 L 48 3 L 49 6 L 48 9 Z" fill="#f4a6c1" stroke="#333" strokeWidth="1" strokeLinejoin="round" />
-                                                <path d="M 52 5.5 L 56 3 L 55 6 L 56 9 Z" fill="#f4a6c1" stroke="#333" strokeWidth="1" strokeLinejoin="round" />
-                                                {/* dress-shaped torso instead of a straight line */}
-                                                <path d="M 47 34 L 45.5 16.5 L 58.5 16.5 L 57 34 Z" fill="#f4a6c1" stroke="#333" strokeWidth="2" strokeLinejoin="round" />
-                                                {/* hand held toward partner (fixed) */}
-                                                <line x1="52" y1="23" x2="40" y2="25" stroke="#333" strokeWidth="2.2" strokeLinecap="round" />
-                                                {/* free arm (swings) */}
-                                                <line ref={femaleFreeArmRef} x1="52" y1="22" x2="52" y2="34" stroke="#333" strokeWidth="2.2" strokeLinecap="round" />
-                                                {/* legs peeking out from under the dress (straight down initially, swung via GSAP) */}
-                                                <line ref={femaleInnerLegRef} x1="52" y1="34" x2="52" y2="52" stroke="#333" strokeWidth="2.2" strokeLinecap="round" />
-                                                <line ref={femaleOuterLegRef} x1="52" y1="34" x2="52" y2="52" stroke="#333" strokeWidth="2.2" strokeLinecap="round" />
-                                            </g>
-                                        </svg>
-                                    </div>
+                            {/* Globe animation — moved up: justifyContent switched from
+                                'flex-end' (bottom) to 'flex-start' (top of the remaining
+                                space), and marginTop pulls it up further right under the
+                                text instead of sitting at the bottom of the page. */}
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'flex-start', marginTop: '-20rem', paddingRight: '1rem' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    <img ref={hangRef} src="/animations/gantung dunia.webp" alt="Gantung Dunia" style={{ width: '150px', marginBottom: '-180px', zIndex: 10, objectFit: 'contain' }} />
+                                    <img ref={globeRef} src="/animations/dunia.webp" alt="Dunia" style={{ width: '250px', zIndex: 5, objectFit: 'contain' }} />
                                 </div>
                             </div>
                         </div>

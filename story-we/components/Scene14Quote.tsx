@@ -5,11 +5,12 @@ import gsap from 'gsap';
 import styles from '../styles/book.module.css';
 
 interface Scene14QuoteProps {
+    isActive?: boolean;
     onNext?: () => void;
     onPrev?: () => void;
 }
 
-export default function Scene14Quote({ onNext, onPrev }: Scene14QuoteProps) {
+export default function Scene14Quote({ onNext, onPrev, isActive = true }: Scene14QuoteProps) {
     const rightTextRef = useRef<HTMLDivElement>(null);
     const underline1Ref = useRef<SVGSVGElement>(null);
     const underline2Ref = useRef<SVGSVGElement>(null);
@@ -19,6 +20,7 @@ export default function Scene14Quote({ onNext, onPrev }: Scene14QuoteProps) {
     const leftGhostRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        if (!isActive) return;
         const tl = gsap.timeline();
 
         // Left page — faded ghost text from previous page
@@ -99,7 +101,7 @@ export default function Scene14Quote({ onNext, onPrev }: Scene14QuoteProps) {
 
     return (
         <>
-            {onPrev && (
+            {isActive && onPrev && (
                 <div className={styles.navBtnWrapperLeft}>
                     <button className={`${styles.navBtn} ${styles.navBtnPrev}`} onClick={onPrev}>
                         <div className={styles.navBtnInner}>
@@ -113,7 +115,7 @@ export default function Scene14Quote({ onNext, onPrev }: Scene14QuoteProps) {
                 </div>
             )}
 
-            {onNext && (
+            {isActive && onNext && (
                 <div className={styles.navBtnWrapperRight}>
                     <button className={`${styles.navBtn} ${styles.navBtnNext}`} onClick={onNext}>
                         <div className={styles.navBtnInner}>

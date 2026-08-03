@@ -5,18 +5,10 @@ import gsap from 'gsap';
 import styles from '../styles/book.module.css';
 
 interface Scene7UniverseProps {
+    isActive?: boolean;
     onNext?: () => void;
     onPrev?: () => void;
 }
-
-const KissMark = ({ color = "#e8a5a5", size = 40 }) => (
-    <svg viewBox="0 0 100 100" width={size} height={size} style={{ opacity: 0.25 }}>
-        {/* Upper lip */}
-        <path d="M 15 50 C 30 25, 45 45, 50 50 C 55 45, 70 25, 85 50 C 70 58, 55 52, 50 52 C 45 52, 30 58, 15 50 Z" fill={color} style={{ mixBlendMode: 'multiply' }} />
-        {/* Lower lip */}
-        <path d="M 15 55 C 35 85, 65 85, 85 55 C 65 65, 35 65, 15 55 Z" fill={color} style={{ mixBlendMode: 'multiply' }} />
-    </svg>
-);
 
 const AsteriskStar = ({ color, size }: { color: string, size: number }) => (
     <svg viewBox="0 0 20 20" width={size} height={size}>
@@ -36,25 +28,13 @@ const HandDrawnStar = ({ color, size }: { color: string, size: number }) => (
     </svg>
 );
 
-export default function Scene7Universe({ onNext, onPrev }: Scene7UniverseProps) {
+export default function Scene7Universe({ onNext, onPrev, isActive = true }: Scene7UniverseProps) {
     const pageRef = useRef<HTMLDivElement>(null);
     const textRef = useRef<HTMLDivElement>(null);
     const starsRef = useRef<HTMLDivElement>(null);
-    const kissesRef = useRef<HTMLDivElement>(null);
-
-    // Positions for kiss marks (left page)
-    const kissPositions = [
-        { top: '10%', left: '15%', rot: -15, scale: 1.2 },
-        { top: '25%', left: '40%', rot: 10, scale: 0.9 },
-        { top: '15%', left: '70%', rot: 25, scale: 1.1 },
-        { top: '40%', left: '20%', rot: -5, scale: 1.3 },
-        { top: '45%', left: '60%', rot: -20, scale: 1.0 },
-        { top: '65%', left: '15%', rot: 15, scale: 1.1 },
-        { top: '60%', left: '75%', rot: 5, scale: 0.8 },
-        { top: '80%', left: '45%', rot: -10, scale: 1.2 },
-        { top: '85%', left: '20%', rot: 20, scale: 0.9 },
-        { top: '80%', left: '80%', rot: -25, scale: 1.0 },
-    ];
+    const kataKataRef = useRef<HTMLImageElement>(null);
+    const hoverBlueRef = useRef<HTMLDivElement>(null);
+    const arrowBlueRef = useRef<HTMLDivElement>(null);
 
     // Positions and types for stars (right page)
     const starData = [
@@ -78,6 +58,7 @@ export default function Scene7Universe({ onNext, onPrev }: Scene7UniverseProps) 
     ];
 
     useEffect(() => {
+        if (!isActive) return;
         const tl = gsap.timeline();
 
         // 1. Fade in the text
@@ -89,12 +70,27 @@ export default function Scene7Universe({ onNext, onPrev }: Scene7UniverseProps) 
             );
         }
 
-        // 2. Pop in the kiss marks on the left page
-        if (kissesRef.current) {
-            tl.fromTo(kissesRef.current.children,
-                { opacity: 0, scale: 0.5 },
-                { opacity: 1, scale: 1, duration: 0.8, stagger: 0.1, ease: 'power2.out' },
-                0.5
+        // 2. Pop in the left-page images: katakata, hoverBlue, arrowBlue
+        gsap.set([kataKataRef.current, hoverBlueRef.current, arrowBlueRef.current], { opacity: 1 });
+        if (kataKataRef.current) {
+            tl.fromTo(kataKataRef.current,
+                { opacity: 0, y: 15 },
+                { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' },
+                0.4
+            );
+        }
+        if (hoverBlueRef.current) {
+            tl.fromTo(hoverBlueRef.current,
+                { opacity: 0, y: 15 },
+                { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' },
+                0.7
+            );
+        }
+        if (arrowBlueRef.current) {
+            tl.fromTo(arrowBlueRef.current,
+                { opacity: 0, y: 15 },
+                { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' },
+                1.0
             );
         }
 
@@ -126,7 +122,7 @@ export default function Scene7Universe({ onNext, onPrev }: Scene7UniverseProps) 
 
     return (
         <>
-            {onPrev && (
+            {isActive && onPrev && (
                 <div className={styles.navBtnWrapperLeft}>
                     <button className={`${styles.navBtn} ${styles.navBtnPrev}`} onClick={onPrev}>
                         <div className={styles.navBtnInner}>
@@ -140,7 +136,7 @@ export default function Scene7Universe({ onNext, onPrev }: Scene7UniverseProps) 
                 </div>
             )}
 
-            {onNext && (
+            {isActive && onNext && (
                 <div className={styles.navBtnWrapperRight}>
                     <button className={`${styles.navBtn} ${styles.navBtnNext}`} onClick={onNext}>
                         <div className={styles.navBtnInner}>
@@ -162,17 +158,79 @@ export default function Scene7Universe({ onNext, onPrev }: Scene7UniverseProps) 
                             Date:
                         </div>
 
-                        <div ref={kissesRef} style={{ position: 'absolute', width: '100%', height: '100%', top: 0, left: 0 }}>
-                            {kissPositions.map((k, i) => (
-                                <div key={i} style={{
+                        <div style={{ position: 'absolute', inset: 0 }}>
+                            {/* Ubah nilai "top" di bawah ini untuk geser naik/turun masing-masing gambar secara independen */}
+                            <img
+                                ref={kataKataRef}
+                                src="/animations/katakata.webp"
+                                alt="kata-kata"
+                                style={{
                                     position: 'absolute',
-                                    top: k.top,
-                                    left: k.left,
-                                    transform: `translate(-50%, -50%) rotate(${k.rot}deg) scale(${k.scale})`
+                                    top: '2%',
+                                    left: '50%',
+                                    transform: 'translateX(-50%)',
+                                    width: '85%',
+                                    height: 'auto',
+                                }}
+                            />
+                            <div
+                                ref={hoverBlueRef}
+                                style={{
+                                    position: 'absolute',
+                                    bottom: '5%',
+                                    left: '50%',
+                                    transform: 'translateX(-50%)',
+                                    width: '55%',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                }}
+                            >
+                                <img
+                                    src="/animations/hoverBlue.webp"
+                                    alt=""
+                                    style={{
+                                        width: '100%',
+                                        height: 'auto',
+                                    }}
+                                />
+                                <div style={{
+                                    position: 'absolute',
+                                    fontFamily: 'var(--font-serif)',
+                                    fontSize: 'clamp(1rem, 3vw, 1.8rem)',
+                                    color: '#f6da73',
+                                    textAlign: 'center',
+                                    letterSpacing: '2px',
+                                    zIndex: 10,
+                                    transform: 'rotate(-4deg)',
+                                    textShadow: '1px 1px 2px rgba(0,0,0,0.3)'
                                 }}>
-                                    <KissMark size={80} />
+                                    KAMU ITU
                                 </div>
-                            ))}
+                            </div>
+                            <div
+                                ref={arrowBlueRef}
+                                style={{
+                                    position: 'absolute',
+                                    bottom: '2%',
+                                    left: '70%',
+                                    transform: 'translateX(-50%)',
+                                    width: '45%',
+                                }}
+                            >
+                                <div style={{ animation: 'steerShake 2.5s steps(4, jump-none) infinite', display: 'flex', justifyContent: 'center' }}>
+                                    <img
+                                        src="/animations/ArrowBlue.webp"
+                                        alt=""
+                                        style={{
+                                            width: '100%',
+                                            height: 'auto',
+                                            transform: 'rotate(-40deg)',
+                                            transformOrigin: 'center center'
+                                        }}
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -203,15 +261,16 @@ export default function Scene7Universe({ onNext, onPrev }: Scene7UniverseProps) 
                         {/* Text */}
                         <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '2rem' }}>
                             <div ref={textRef} style={{
-                                fontFamily: 'var(--font-handwriting)',
-                                fontSize: '1.8rem',
-                                color: '#333',
+                                fontFamily: 'var(--font-serif)',
+                                fontSize: 'clamp(2.5rem, 6vw, 3.5rem)',
+                                color: '#4e7cc4',
                                 textAlign: 'center',
                                 textTransform: 'uppercase',
                                 letterSpacing: '4px',
-                                lineHeight: '2.5'
+                                lineHeight: '1.2',
+                                textShadow: '2px 2px 0px rgba(78, 124, 196, 0.2)',
+                                animation: 'jerkyShake 2.5s steps(4, jump-none) infinite 0.1s'
                             }}>
-                                <div>YOU ARE</div>
                                 <div>MY</div>
                                 <div>UNIVERSE</div>
                             </div>
@@ -220,6 +279,23 @@ export default function Scene7Universe({ onNext, onPrev }: Scene7UniverseProps) 
                     </div>
                 </div>
             </div>
+
+            <style>{`
+                @keyframes jerkyShake {
+                    0%   { transform: translate(0, 0) rotate(0deg); }
+                    25%  { transform: translate(-3px, 2px) rotate(-1.5deg); }
+                    50%  { transform: translate(3px, -2px) rotate(1deg); }
+                    75%  { transform: translate(1.5px, 3px) rotate(-1deg); }
+                    100% { transform: translate(0, 0) rotate(0deg); }
+                }
+                @keyframes steerShake {
+                    0%   { transform: rotate(0deg); }
+                    25%  { transform: rotate(14deg); }
+                    50%  { transform: rotate(0deg); }
+                    75%  { transform: rotate(-14deg); }
+                    100% { transform: rotate(0deg); }
+                }
+            `}</style>
         </>
     );
 }

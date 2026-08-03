@@ -5,6 +5,7 @@ import gsap from 'gsap';
 import styles from '../styles/book.module.css';
 
 interface Scene2BookFlipProps {
+    isActive?: boolean;
     onNext: () => void;
     onPrev?: () => void;
 }
@@ -13,18 +14,18 @@ interface Scene2BookFlipProps {
 const SEPT_2025_DAYS = 30;
 const SEPT_2025_START = 0;
 const HEART_DAY = 13;
-const YEAR_LABEL = '2025';
+const YEAR_LABEL = '2026';
 const BOTTOM_TEXT = 'Ini Adalah Tanggal Jadian Kita!!!';
 
-export default function Scene2BookFlip({ onNext, onPrev }: Scene2BookFlipProps) {
+export default function Scene2BookFlip({ onNext, onPrev, isActive = true }: Scene2BookFlipProps) {
     const wrapperRef = useRef<HTMLDivElement>(null);
-    const pageRef = useRef<HTMLDivElement>(null);
     const heartPathRef = useRef<SVGPathElement>(null);
     const dashPathRef = useRef<SVGPathElement>(null);
     const arrowRef = useRef<SVGGElement>(null);
     const textRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        if (!isActive) return;
         requestAnimationFrame(() => {
             if (heartPathRef.current) {
                 const len = heartPathRef.current.getTotalLength();
@@ -61,15 +62,7 @@ export default function Scene2BookFlip({ onNext, onPrev }: Scene2BookFlipProps) 
         };
     }, []);
 
-    const handleNext = () => {
-        if (pageRef.current) {
-            gsap.to(pageRef.current, {
-                rotateY: -180, duration: 0.8, ease: 'power2.inOut', onComplete: onNext,
-            });
-        } else {
-            onNext();
-        }
-    };
+    // Navigation is now handled by the global PageFlipOverlay in BookExperience.
 
     const calendarCells: (number | null)[] = [
         ...Array(SEPT_2025_START).fill(null),
@@ -79,7 +72,7 @@ export default function Scene2BookFlip({ onNext, onPrev }: Scene2BookFlipProps) 
     return (
         <>
             {/* ── Left button (hidden on page 1) ── */}
-            {onPrev && (
+            {isActive && onPrev && (
                 <div className={styles.navBtnWrapperLeft}>
                     <button className={`${styles.navBtn} ${styles.navBtnPrev}`} onClick={onPrev}>
                         <div className={styles.navBtnInner}>
@@ -94,7 +87,7 @@ export default function Scene2BookFlip({ onNext, onPrev }: Scene2BookFlipProps) 
             )}
 
             <div className={styles.navBtnWrapperRight}>
-                <button className={`${styles.navBtn} ${styles.navBtnNext}`} onClick={handleNext}>
+                <button className={`${styles.navBtn} ${styles.navBtnNext}`} onClick={onNext}>
                     <div className={styles.navBtnInner}>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" height="25px" width="25px" style={{ transform: 'rotate(180deg)' }}>
                             <path d="M224 480h640a32 32 0 1 1 0 64H224a32 32 0 0 1 0-64z" fill="#000" />
@@ -110,55 +103,41 @@ export default function Scene2BookFlip({ onNext, onPrev }: Scene2BookFlipProps) 
                 <div className={`${styles.pageLeft} ${styles.linedPage}`}>
                     <div className={styles.pageContent} style={{ padding: '2rem 2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', height: '100%', gap: '0', overflow: 'hidden' }}>
 
-                        {/* Top decorative heart */}
-                        <div style={{ fontSize: '1.4rem', color: '#e8729a', marginBottom: '0.2rem', lineHeight: 1 }}>♥</div>
-
-                        {/* WELCOME with chevrons */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.1rem' }}>
-                            <span style={{ color: '#e8729a', fontSize: '1.5rem', fontWeight: 'bold', letterSpacing: '-2px' }}>›</span>
-                            <h1 style={{
-                                fontFamily: 'var(--font-handwriting)',
-                                fontSize: 'clamp(2rem, 5vw, 2.8rem)',
-                                fontWeight: '900',
-                                color: '#e8729a',
-                                margin: 0,
-                                letterSpacing: '0.04em',
-                                textShadow: '2px 2px 0px rgba(232,114,154,0.15)',
-                            }}>WELCOME</h1>
-                            <span style={{ color: '#e8729a', fontSize: '1.5rem', fontWeight: 'bold', letterSpacing: '-2px' }}>‹</span>
-                        </div>
-
-                        {/* Wavy underline SVG */}
-                        <svg viewBox="0 0 160 12" style={{ width: '70%', height: 'auto', marginBottom: '0.6rem' }}>
-                            <path
-                                d="M 0,6 C 10,0 20,12 30,6 C 40,0 50,12 60,6 C 70,0 80,12 90,6 C 100,0 110,12 120,6 C 130,0 140,12 150,6 C 155,3 158,4 160,6"
-                                fill="none" stroke="#e8729a" strokeWidth="2.5" strokeLinecap="round"
-                            />
-                        </svg>
+                        {/* WELCOME image */}
+                        <img
+                            src="/animations/WELCOME.webp"
+                            alt="Welcome"
+                            className="gentleSwing"
+                            style={{
+                                width: 'clamp(180px, 60%, 320px)',
+                                height: 'auto',
+                                objectFit: 'contain',
+                                marginBottom: '0.6rem',
+                            }}
+                        />
 
                         {/* Haiii, */}
-                        <p style={{ fontFamily: 'var(--font-handwriting)', fontSize: '1rem', color: '#555', margin: '0 0 0.05rem 0' }}>Haiii,</p>
+                        <p style={{ fontFamily: 'var(--font-handwriting)', fontSize: 'clamp(1rem, 2.5vw, 1.2rem)', color: '#444', margin: '0 0 0.15rem 0', letterSpacing: '0.02em' }}>Haiii,</p>
 
                         {/* Name */}
                         <p style={{
-                            fontFamily: 'var(--font-handwriting)',
-                            fontSize: 'clamp(1.1rem, 3vw, 1.5rem)',
-                            fontWeight: '700',
+                            fontFamily: 'var(--font-serif)',
+                            fontSize: 'clamp(1.3rem, 3.5vw, 1.9rem)',
+                            fontWeight: 'normal',
                             color: '#e8729a',
-                            margin: '0 0 0.6rem 0',
-                            textDecoration: 'underline',
-                            textDecorationStyle: 'wavy',
-                            textDecorationColor: '#f7b8cc',
-                            textUnderlineOffset: '4px',
+                            margin: '0 0 0.5rem 0',
+                            letterSpacing: '0.06em',
+                            lineHeight: 1.2,
+                            textAlign: 'center',
                         }}>Reva Putri Denti</p>
 
                         {/* Body paragraph */}
                         <p style={{
                             fontFamily: 'var(--font-handwriting)',
-                            fontSize: 'clamp(0.7rem, 1.8vw, 0.88rem)',
-                            color: '#555',
+                            fontSize: 'clamp(0.82rem, 2vw, 1rem)',
+                            color: '#3a3a3a',
                             textAlign: 'center',
-                            lineHeight: '1.75',
+                            lineHeight: '1.85',
                             margin: '0 0 0.8rem 0',
                             padding: '0 0.3rem',
                         }}>
@@ -168,7 +147,7 @@ export default function Scene2BookFlip({ onNext, onPrev }: Scene2BookFlipProps) 
                             menjadi kenangan indah<br />
                             yang tak terlupakan.<br />
                             Mari kita ciptakan lebih banyak<br />
-                            cerita indah bersama! ♡
+                            cerita indah bersama!
                         </p>
 
                         {/* Decorative scattered ornaments */}
@@ -176,10 +155,6 @@ export default function Scene2BookFlip({ onNext, onPrev }: Scene2BookFlipProps) 
                             {/* Star left */}
                             <svg style={{ position: 'absolute', left: '8%', top: '-4px' }} width="18" height="18" viewBox="0 0 24 24">
                                 <path d="M12 2l1.5 4.5H18l-3.75 2.75 1.5 4.5L12 11l-3.75 2.75 1.5-4.5L6 6.5h4.5z" fill="#f4d03f" stroke="#e2b007" strokeWidth="0.5" />
-                            </svg>
-                            {/* Heart left bottom */}
-                            <svg style={{ position: 'absolute', left: '3%', top: '4px' }} width="22" height="22" viewBox="0 0 24 24">
-                                <path d="M12 21C12 21 3 14 3 8a5 5 0 0 1 9-3 5 5 0 0 1 9 3c0 6-9 13-9 13z" fill="none" stroke="#e8729a" strokeWidth="1.5" />
                             </svg>
                             {/* Star right */}
                             <svg style={{ position: 'absolute', right: '8%', top: '-2px' }} width="16" height="16" viewBox="0 0 24 24">
@@ -190,26 +165,8 @@ export default function Scene2BookFlip({ onNext, onPrev }: Scene2BookFlipProps) 
                             </svg>
                         </div>
 
-                        {/* Pill badge */}
-                        <div style={{
-                            background: 'linear-gradient(135deg, #fce4ec, #f8bbd9)',
-                            border: '1.5px solid #e8729a',
-                            borderRadius: '999px',
-                            padding: '0.35rem 1.2rem',
-                            fontFamily: 'var(--font-handwriting)',
-                            fontSize: '0.85rem',
-                            color: '#c0392b',
-                            fontStyle: 'italic',
-                            boxShadow: '0 2px 8px rgba(232,114,154,0.25)',
-                        }}>
-                            Enjoy every moment ♥
-                        </div>
-
-                        {/* Bottom corner hearts */}
+                        {/* Bottom corner stars */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginTop: 'auto', paddingTop: '0.5rem' }}>
-                            <svg width="28" height="28" viewBox="0 0 24 24">
-                                <path d="M12 21C12 21 3 14 3 8a5 5 0 0 1 9-3 5 5 0 0 1 9 3c0 6-9 13-9 13z" fill="none" stroke="#e8729a" strokeWidth="1.8" />
-                            </svg>
                             <svg width="22" height="22" viewBox="0 0 24 24">
                                 <path d="M12 2l1.5 4.5H18l-3.75 2.75 1.5 4.5L12 11l-3.75 2.75 1.5-4.5L6 6.5h4.5z" fill="#f4d03f" stroke="#e2b007" strokeWidth="0.5" />
                             </svg>
@@ -221,22 +178,40 @@ export default function Scene2BookFlip({ onNext, onPrev }: Scene2BookFlipProps) 
                 </div>
 
                 {/* ── RIGHT PAGE — calendar ── */}
-                <div className={`${styles.page} ${styles.linedPage}`} ref={pageRef}>
+                <div className={`${styles.page} ${styles.linedPage}`}>
                     <div className={styles.pageContent}>
-                        {/* Title: ♥ Month image ♥  /  Year */}
+                        {/* Title: Month image / Year */}
                         <div style={{ marginBottom: '0.6rem', fontFamily: 'var(--font-handwriting)' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <span style={{ color: '#e74c3c', fontSize: '1.6rem' }}>♥</span>
                                 <img
                                     src="/pages/September.png"
                                     alt="September"
+                                    className="gentleSwing"
                                     style={{ height: '2.2rem', width: 'auto', objectFit: 'contain' }}
                                 />
-                                <span style={{ color: '#e74c3c', fontSize: '1.6rem' }}>♥</span>
                             </div>
-                            <div style={{ fontSize: '1.2rem', color: '#888', marginTop: '0.2rem' }}>
-                                {YEAR_LABEL}
-                            </div>
+                            <img
+                                src="/animations/2026.webp"
+                                alt={YEAR_LABEL}
+                                className="gentleSwing"
+                                style={{
+                                    height: '3.2rem',
+                                    width: 'auto',
+                                    objectFit: 'contain',
+                                    marginTop: '0.2rem',
+                                    display: 'block',
+                                }}
+                            />
+                            <style jsx>{`
+                                .gentleSwing {
+                                    transform-origin: 50% 90%;
+                                    animation: gentleSwingRotate 2.4s steps(6, jump-end) infinite alternate;
+                                }
+                                @keyframes gentleSwingRotate {
+                                    0%   { transform: rotate(-8deg); }
+                                    100% { transform: rotate(8deg); }
+                                }
+                            `}</style>
                         </div>
 
                         <div style={{ position: 'relative', width: '100%' }}>
@@ -346,9 +321,7 @@ export default function Scene2BookFlip({ onNext, onPrev }: Scene2BookFlipProps) 
                                     lineHeight: '1.4',
                                 }}
                             >
-                                <span style={{ color: '#e74c3c' }}>♥ </span>
                                 {BOTTOM_TEXT}
-                                <span style={{ color: '#e74c3c' }}> ♥</span>
                             </div>
 
                         </div>{/* end relative wrapper */}
