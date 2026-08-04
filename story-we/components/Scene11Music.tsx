@@ -1,202 +1,163 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import styles from '../styles/book.module.css';
 
-interface Scene11MusicProps {
+interface ChatBubble {
+    text: string;
+    who: 'me' | 'them';
+}
+
+interface Scene11BoyfriendProps {
     isActive?: boolean;
     onNext?: () => void;
     onPrev?: () => void;
-    /** Song / artist text shown on the card */
-    songTitle?: string;
-    artistName?: string;
-    /** Optional album art URL. If provided, it's rendered automatically inside the disc.
-     *  If omitted, a default illustrated label (stars + moon + mountain) is drawn instead. */
-    albumArt?: string;
+
+    // Left page
+    boyfriendName?: string;
+    boyfriendPhoto?: string;
+    introText?: string;
+    quoteText?: string;
+    notesMessages?: ChatBubble[];
+    monthversaryText?: string;
+
+    // Right page
+    framePhoto1?: string;
+    frameCaption1?: string;
+    frameCaption2?: string;
+    loveDefinition?: string;
+    aboutMeTitle?: string;
+    aboutMeText?: string;
+    aboutMePhoto?: string;
+    aboutMeName?: string;
 }
 
-export default function Scene11Music({
+/* ───────────────── Decorative doodles (inline SVG) ───────────────── */
+
+const Flower = ({ size = 40, color = '#f4a3c2' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 40 40">
+        {[0, 72, 144, 216, 288].map((deg) => (
+            <ellipse key={deg} cx="20" cy="10" rx="6" ry="9" fill={color}
+                transform={`rotate(${deg} 20 20)`} opacity="0.9" />
+        ))}
+        <circle cx="20" cy="20" r="5" fill="#ffd76b" />
+    </svg>
+);
+
+const Star = ({ size = 34, color = '#ffd76b' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 40 40">
+        <path d="M20 2 L24 15 L38 15 L27 23 L31 37 L20 28 L9 37 L13 23 L2 15 L16 15 Z" fill={color} />
+    </svg>
+);
+
+const Sun = ({ size = 60 }: { size?: number }) => (
+    <svg width={size} height={size} viewBox="0 0 60 60">
+        <circle cx="30" cy="30" r="14" fill="#ffb84d" />
+        {Array.from({ length: 8 }).map((_, i) => {
+            const deg = i * 45;
+            return (
+                <rect key={i} x="28" y="2" width="4" height="10" rx="2" fill="#ffb84d"
+                    transform={`rotate(${deg} 30 30)`} />
+            );
+        })}
+    </svg>
+);
+
+const Butterfly = ({ size = 36 }: { size?: number }) => (
+    <svg width={size} height={size} viewBox="0 0 40 40">
+        <path d="M20 20 C10 4 0 8 4 18 C7 26 16 24 20 20Z" fill="#b79ce8" opacity="0.85" />
+        <path d="M20 20 C30 4 40 8 36 18 C33 26 24 24 20 20Z" fill="#b79ce8" opacity="0.85" />
+        <path d="M20 20 C13 26 6 30 8 36 C11 34 16 28 20 20Z" fill="#c9b6ef" opacity="0.85" />
+        <path d="M20 20 C27 26 34 30 32 36 C29 34 24 28 20 20Z" fill="#c9b6ef" opacity="0.85" />
+        <rect x="19" y="16" width="2" height="14" rx="1" fill="#4a3f66" />
+    </svg>
+);
+
+const Heart = ({ size = 24, color = '#e05c7a' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24">
+        <path d="M12 21s-7-4.5-9.5-9C.5 8 3 4 7 4c2 0 3.8 1.2 5 3 1.2-1.8 3-3 5-3 4 0 6.5 4 4.5 8-2.5 4.5-9.5 9-9.5 9z" fill={color} />
+    </svg>
+);
+
+/* ───────────────────────────── Component ───────────────────────────── */
+
+export default function Scene11Boyfriend({
     isActive = true,
     onNext,
     onPrev,
-    songTitle = 'Music Name',
-    artistName = 'Singer & artist',
-    albumArt,
-}: Scene11MusicProps) {
+    boyfriendName = 'Deon',
+    boyfriendPhoto,
+    introText = "Let me introduce you with my special star. He is one of the most important things in my life. When I get up in the morning, I feel so grateful for every second I've been with him.",
+    quoteText = "He is the reason I smile again. Life is better when he's in it. The days are more fun, moments are more thoughtful. I love having him in my life. My world feels bigger, my heart feels happier, I think because of him, my world has grown. I love you.",
+    notesMessages = [
+        { text: 'I love you', who: 'me' },
+        { text: 'I love you more', who: 'them' },
+        { text: 'I love you most', who: 'me' },
+    ],
+    monthversaryText = 'Happy 2nd Monthversary, Love',
+    framePhoto1,
+    frameCaption1 = 'his beautiful face',
+    frameCaption2 = 'I could make it a hobby of mine',
+    loveDefinition = 'Love is a set of emotions and behaviors characterized by intimacy, passion, and commitment. It involves care, closeness, protectiveness, attraction, and trust.',
+    aboutMeTitle = 'About Me :',
+    aboutMeText = "Hi, it's me — Deondra's clingy girlfriend. People say I never get tired of hyping up my boyfriend. I faint easily, my MBTI keeps switching, sometimes I'm ESFJ, sometimes I'm just a soft mess ><",
+    aboutMePhoto,
+    aboutMeName = 'Runa',
+}: Scene11BoyfriendProps) {
     const titleRef = useRef<HTMLDivElement>(null);
-    const playerBoxRef = useRef<HTMLDivElement>(null);
-    const vinylRef = useRef<SVGSVGElement>(null);
-    const vinylWrapRef = useRef<HTMLDivElement>(null);
-    const songInfoRef = useRef<HTMLDivElement>(null);
-    const controlsRef = useRef<HTMLDivElement>(null);
-    const progressRef = useRef<HTMLDivElement>(null);
-    const leftFadeRef = useRef<HTMLDivElement>(null);
-    const playBtnRef = useRef<HTMLButtonElement>(null);
-    const repeatIconRef = useRef<HTMLSpanElement>(null);
-    const notesLayerRef = useRef<HTMLDivElement>(null);
-    const thumbRef = useRef<HTMLDivElement>(null);
+    const photoRef = useRef<HTMLDivElement>(null);
+    const introRef = useRef<HTMLParagraphElement>(null);
+    const quoteRef = useRef<HTMLParagraphElement>(null);
+    const notesRef = useRef<HTMLDivElement>(null);
+    const loveYouRef = useRef<HTMLDivElement>(null);
+    const monthRef = useRef<HTMLDivElement>(null);
 
-    const [isPlaying, setIsPlaying] = useState(true);
-    const [currentTime, setCurrentTime] = useState(0);
-    const [isRepeat, setIsRepeat] = useState(false);
-    const totalDuration = 268; // 4:28 in seconds
-
-    // Unique id so multiple players on one page don't clash clip-paths
-    const [clipId] = useState(() => `vinylClip-${Math.random().toString(36).slice(2, 9)}`);
-
-    const vinylTweenRef = useRef<gsap.core.Tween | null>(null);
-    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const noteIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-    const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
-
-    // ── Little notes floating up near the disc while playing ──
-    const spawnNote = () => {
-        if (!notesLayerRef.current) return;
-        const note = document.createElement('div');
-        const glyphs = ['♪', '♫', '♬'];
-        note.textContent = glyphs[Math.floor(Math.random() * glyphs.length)];
-        note.style.position = 'absolute';
-        note.style.left = `${20 + Math.random() * 30}px`;
-        note.style.bottom = '0px';
-        note.style.fontSize = `${0.8 + Math.random() * 0.5}rem`;
-        note.style.color = '#b8b0c9';
-        note.style.pointerEvents = 'none';
-        note.style.opacity = '0';
-        notesLayerRef.current.appendChild(note);
-
-        gsap.fromTo(note,
-            { y: 0, opacity: 0, rotate: 0 },
-            {
-                y: -60 - Math.random() * 15,
-                x: (Math.random() - 0.5) * 30,
-                rotate: (Math.random() - 0.5) * 30,
-                opacity: 1,
-                duration: 1.6,
-                ease: 'power1.out',
-                onComplete: () => note.remove(),
-            }
-        );
-        gsap.to(note, { opacity: 0, duration: 0.5, delay: 1.0, ease: 'power1.in' });
-    };
+    const frameRef = useRef<HTMLDivElement>(null);
+    const sunRef = useRef<HTMLDivElement>(null);
+    const quizRef = useRef<HTMLDivElement>(null);
+    const loveDefRef = useRef<HTMLDivElement>(null);
+    const aboutRef = useRef<HTMLDivElement>(null);
+    const aboutPhotoRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (!isActive) return;
         const tl = gsap.timeline({ defaults: { ease: 'power2.out' } });
 
-        if (leftFadeRef.current) {
-            tl.fromTo(leftFadeRef.current, { opacity: 0 }, { opacity: 1, duration: 1.5 }, 0);
-        }
-        if (titleRef.current) {
-            tl.fromTo(titleRef.current, { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: 0.6 }, 0.4);
-        }
-        if (playerBoxRef.current) {
-            tl.fromTo(playerBoxRef.current, { opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1, duration: 0.7, ease: 'back.out(1.4)' }, 0.8);
-        }
-        if (songInfoRef.current) {
-            tl.fromTo(songInfoRef.current, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.5 }, 1.2);
-        }
-        if (progressRef.current) {
-            tl.fromTo(progressRef.current, { opacity: 0 }, { opacity: 1, duration: 0.4 }, 1.5);
-        }
-        if (controlsRef.current) {
-            tl.fromTo(controlsRef.current, { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.5 }, 1.6);
-        }
+        if (photoRef.current) tl.fromTo(photoRef.current, { opacity: 0, scale: 0.85, y: -10 }, { opacity: 1, scale: 1, y: 0, duration: 0.6, ease: 'back.out(1.5)' }, 0);
+        if (titleRef.current) tl.fromTo(titleRef.current, { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: 0.5 }, 0.2);
+        if (introRef.current) tl.fromTo(introRef.current, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.5 }, 0.4);
+        if (quoteRef.current) tl.fromTo(quoteRef.current, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.5 }, 0.6);
+        if (notesRef.current) tl.fromTo(notesRef.current, { opacity: 0, scale: 0.9, rotate: -3 }, { opacity: 1, scale: 1, rotate: -2, duration: 0.5, ease: 'back.out(1.4)' }, 0.8);
+        if (loveYouRef.current) tl.fromTo(loveYouRef.current, { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.4 }, 1.0);
+        if (monthRef.current) tl.fromTo(monthRef.current, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.5 }, 1.1);
 
-        vinylTweenRef.current = gsap.to(vinylRef.current, {
-            rotation: 360,
-            transformOrigin: 'center center',
-            repeat: -1,
-            duration: 3,
-            ease: 'none',
-        });
+        if (frameRef.current) tl.fromTo(frameRef.current, { opacity: 0, scale: 0.9, rotate: 3 }, { opacity: 1, scale: 1, rotate: 2, duration: 0.6, ease: 'back.out(1.4)' }, 0.2);
+        if (sunRef.current) tl.fromTo(sunRef.current, { opacity: 0, scale: 0.5, rotate: -30 }, { opacity: 1, scale: 1, rotate: 0, duration: 0.6, ease: 'back.out(2)' }, 0.4);
+        if (quizRef.current) tl.fromTo(quizRef.current, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.5 }, 0.6);
+        if (loveDefRef.current) tl.fromTo(loveDefRef.current, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.5 }, 0.8);
+        if (aboutRef.current) tl.fromTo(aboutRef.current, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.5 }, 1.0);
+        if (aboutPhotoRef.current) tl.fromTo(aboutPhotoRef.current, { opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.5)' }, 1.1);
 
-        timerRef.current = setInterval(() => {
-            setCurrentTime(t => {
-                if (t >= totalDuration) { clearInterval(timerRef.current!); return totalDuration; }
-                return t + 1;
-            });
-        }, 1000);
+        gsap.to(sunRef.current, { rotate: 360, duration: 20, repeat: -1, ease: 'none' });
 
-        noteIntervalRef.current = setInterval(spawnNote, 900);
-
-        return () => {
-            tl.kill();
-            vinylTweenRef.current?.kill();
-            if (timerRef.current) clearInterval(timerRef.current);
-            if (noteIntervalRef.current) clearInterval(noteIntervalRef.current);
-        };
+        return () => { tl.kill(); };
     }, []);
 
-    // Notes only float while playing
-    useEffect(() => {
-        if (!isActive) return;
-        if (isPlaying) {
-            if (!noteIntervalRef.current) noteIntervalRef.current = setInterval(spawnNote, 900);
-        } else if (noteIntervalRef.current) {
-            clearInterval(noteIntervalRef.current);
-            noteIntervalRef.current = null;
-        }
-    }, [isPlaying]);
-
-    const togglePlay = () => {
-        if (playBtnRef.current) {
-            gsap.fromTo(playBtnRef.current, { scale: 0.75 }, { scale: 1, duration: 0.45, ease: 'elastic.out(1.1, 0.5)' });
-        }
-        setIsPlaying(p => {
-            const next = !p;
-            if (vinylTweenRef.current) next ? vinylTweenRef.current.resume() : vinylTweenRef.current.pause();
-            if (next) {
-                timerRef.current = setInterval(() => {
-                    setCurrentTime(t => {
-                        if (t >= totalDuration) { clearInterval(timerRef.current!); return totalDuration; }
-                        return t + 1;
-                    });
-                }, 1000);
-            } else if (timerRef.current) {
-                clearInterval(timerRef.current);
-            }
-            return next;
-        });
-    };
-
-    const nudgeVinyl = () => {
-        if (!vinylRef.current) return;
-        gsap.to(vinylRef.current, { scale: 0.94, duration: 0.12, yoyo: true, repeat: 1, ease: 'power1.inOut' });
-    };
-
-    const handleSkip = (delta: number) => {
-        setCurrentTime(t => Math.max(0, Math.min(totalDuration, t + delta)));
-        nudgeVinyl();
-    };
-
-    const toggleRepeat = () => {
-        setIsRepeat(r => !r);
-        if (repeatIconRef.current) {
-            gsap.fromTo(repeatIconRef.current, { rotate: 0 }, { rotate: 360, duration: 0.6, ease: 'power2.out' });
-        }
-    };
-
-    const handleBoxEnter = () => {
-        if (!playerBoxRef.current) return;
-        gsap.to(playerBoxRef.current, { y: -3, boxShadow: '0 14px 32px rgba(0,0,0,0.16)', duration: 0.3, ease: 'power2.out' });
-    };
-    const handleBoxLeave = () => {
-        if (!playerBoxRef.current) return;
-        gsap.to(playerBoxRef.current, { y: 0, boxShadow: '0 10px 26px rgba(0,0,0,0.12)', duration: 0.4, ease: 'power2.out' });
-    };
-
-    const progressPct = (currentTime / totalDuration) * 100;
-
-    useEffect(() => {
-        if (!isActive) return;
-        if (!thumbRef.current) return;
-        if (isPlaying) {
-            const t = gsap.to(thumbRef.current, { scale: 1.2, duration: 0.6, repeat: -1, yoyo: true, ease: 'sine.inOut' });
-            return () => { t.kill(); gsap.set(thumbRef.current, { scale: 1 }); };
-        }
-    }, [isPlaying]);
+    const photoBox = (
+        style: React.CSSProperties,
+        src: string | undefined,
+        alt: string,
+    ) => (
+        <div style={{
+            width: '100%', height: '100%', borderRadius: 'inherit',
+            background: src ? `url(${src}) center/cover no-repeat` : 'linear-gradient(135deg,#e6e0f5,#f5e6ee)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#b0a6c9', fontFamily: 'system-ui, sans-serif', fontSize: '0.75rem',
+        }}>
+            {!src && alt}
+        </div>
+    );
 
     return (
         <>
@@ -213,7 +174,6 @@ export default function Scene11Music({
                     </button>
                 </div>
             )}
-
             {isActive && onNext && (
                 <div className={styles.navBtnWrapperRight}>
                     <button className={`${styles.navBtn} ${styles.navBtnNext}`} onClick={onNext}>
@@ -229,202 +189,207 @@ export default function Scene11Music({
             )}
 
             <div className={styles.bookWrapper}>
-                {/* ── LEFT PAGE — mostly blank with faint heart bleed-through ── */}
+                {/* ══════════════════ LEFT PAGE ══════════════════ */}
                 <div className={`${styles.pageLeft} ${styles.linedPage}`}>
-                    <div className={styles.pageContent}>
-                        <div style={{ position: 'absolute', top: '2.5rem', left: '2rem', fontFamily: 'var(--font-handwriting)', fontSize: '1.1rem', color: '#999' }}>
-                            Date:
+                    <div className={styles.pageContent} style={{ position: 'relative' }}>
+
+                        {/* Photo with warm glow */}
+                        <div ref={photoRef} style={{ position: 'absolute', top: '1.6rem', left: '1.4rem', width: '130px', height: '170px' }}>
+                            <div style={{ position: 'absolute', inset: '-14px', borderRadius: '16px', background: 'radial-gradient(circle, rgba(255,196,90,0.55), rgba(255,196,90,0))', filter: 'blur(4px)' }} />
+                            <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: '14px', overflow: 'hidden', boxShadow: '0 8px 18px rgba(0,0,0,0.18)' }}>
+                                {photoBox({}, boyfriendPhoto, 'photo')}
+                            </div>
+                            <span style={{ position: 'absolute', top: '-14px', left: '-10px', fontSize: '1.3rem' }}>🧸💗</span>
+                            <span style={{ position: 'absolute', bottom: '-18px', left: '2px', fontFamily: 'var(--font-handwriting)', fontSize: '0.85rem', color: '#c9a24a', transform: 'rotate(-6deg)' }}>{boyfriendName}</span>
                         </div>
-                        <div ref={leftFadeRef} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', opacity: 0, pointerEvents: 'none' }}>
-                            <svg viewBox="0 0 200 200" width="200" height="200" style={{ opacity: 0.08 }}>
-                                <path d="M100 170 C100 170,20 110,20 55 C20 20,60 12,100 55 C140 12,180 20,180 55 C180 110,100 170,100 170Z" fill="#cc3333" />
-                            </svg>
+
+                        {/* Title */}
+                        <div ref={titleRef} style={{
+                            position: 'absolute', top: '2.2rem', left: '9.6rem', right: '1.2rem',
+                            fontFamily: 'var(--font-handwriting)', fontWeight: 700, fontSize: '2rem',
+                            color: '#f0a8c0', WebkitTextStroke: '0.5px #d97ea3',
+                        }}>
+                            THE Boyfriend
                         </div>
-                        <div style={{ position: 'absolute', bottom: '6rem', left: '1.5rem', fontFamily: 'var(--font-handwriting)', fontSize: '1.2rem', color: '#bbb', transform: 'rotate(-6deg)' }}>
-                            ♪ ♫
+
+                        {/* Intro */}
+                        <p ref={introRef} style={{
+                            position: 'absolute', top: '5.4rem', left: '9.6rem', right: '1.2rem',
+                            fontFamily: 'var(--font-handwriting)', fontSize: '0.95rem', color: '#333', lineHeight: 1.5,
+                        }}>
+                            {introText}
+                        </p>
+
+                        <div style={{ position: 'absolute', top: '12.5rem', left: '9.6rem' }}>
+                            <Flower size={36} />
                         </div>
+                        <div style={{ position: 'absolute', top: '11.8rem', left: '11.8rem' }}>
+                            <Flower size={26} color="#ffd76b" />
+                        </div>
+
+                        {/* Quote */}
+                        <p ref={quoteRef} style={{
+                            position: 'absolute', top: '13.4rem', left: '1.3rem', width: '13.5rem',
+                            fontFamily: 'var(--font-handwriting)', fontSize: '0.92rem', color: '#333', lineHeight: 1.5,
+                        }}>
+                            &ldquo; {quoteText} &rdquo;
+                        </p>
+
+                        {/* Sticky notes card with chat bubbles */}
+                        <div ref={notesRef} style={{
+                            position: 'absolute', top: '13.5rem', right: '1.2rem', width: '11rem',
+                            background: '#f4fbe8', border: '2px solid #cfe0a0', borderRadius: '6px',
+                            padding: '0.6rem 0.6rem 0.8rem', boxShadow: '0 6px 14px rgba(0,0,0,0.12)',
+                        }}>
+                            <div style={{
+                                position: 'absolute', top: '-0.6rem', left: '50%', transform: 'translateX(-50%)',
+                                background: '#bde0f0', fontFamily: 'system-ui, sans-serif', fontSize: '0.65rem',
+                                fontWeight: 700, padding: '0.1rem 0.6rem', borderRadius: '4px', letterSpacing: '1px',
+                            }}>NOTES!</div>
+                            <div style={{ position: 'absolute', top: '0.4rem', right: '0.5rem' }}><Star size={20} /></div>
+                            <div style={{ marginTop: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                                {notesMessages.map((m, i) => (
+                                    <div key={i} style={{
+                                        alignSelf: m.who === 'me' ? 'flex-end' : 'flex-start',
+                                        background: m.who === 'me' ? '#dff3e0' : '#e8e8f2',
+                                        borderRadius: '10px', padding: '0.25rem 0.55rem', maxWidth: '85%',
+                                        fontFamily: 'system-ui, sans-serif', fontSize: '0.68rem', color: '#333',
+                                    }}>
+                                        {m.text} {m.who === 'me' ? '🩷' : ''}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* LOVE YOU bubble text */}
+                        <div ref={loveYouRef} style={{
+                            position: 'absolute', bottom: '5.4rem', left: '1.3rem',
+                            fontFamily: 'var(--font-handwriting)', fontWeight: 800, fontSize: '1.8rem',
+                            background: 'linear-gradient(90deg,#f66,#fa6,#6c6,#69f,#a6f)',
+                            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                            transform: 'rotate(-3deg)',
+                        }}>
+                            LOVE YOU
+                        </div>
+
+                        {/* Monthversary */}
+                        <div ref={monthRef} style={{
+                            position: 'absolute', bottom: '2.6rem', left: '1.3rem',
+                            fontFamily: 'var(--font-handwriting)', fontSize: '1.15rem', color: '#c23b3b',
+                        }}>
+                            {monthversaryText}
+                        </div>
+
+                        {/* Postit stack */}
+                        <div style={{
+                            position: 'absolute', bottom: '2.2rem', right: '1.6rem', width: '3.8rem', height: '3rem',
+                        }}>
+                            <div style={{ position: 'absolute', inset: 0, background: '#f9c9d6', borderRadius: '4px', transform: 'rotate(6deg)', boxShadow: '0 3px 6px rgba(0,0,0,0.15)' }} />
+                            <div style={{
+                                position: 'absolute', inset: 0, background: '#fce4ec', borderRadius: '4px', transform: 'rotate(-3deg)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column',
+                                fontFamily: 'var(--font-handwriting)', fontSize: '0.65rem', color: '#b8567a', boxShadow: '0 3px 6px rgba(0,0,0,0.15)',
+                            }}>
+                                <span>P.S.</span><span>I ♡ U</span>
+                            </div>
+                        </div>
+
+                        <div style={{ position: 'absolute', bottom: '9.5rem', right: '2.5rem' }}><Heart size={18} /></div>
                     </div>
                 </div>
 
-                {/* ── RIGHT PAGE ── */}
+                {/* ══════════════════ RIGHT PAGE ══════════════════ */}
                 <div className={`${styles.dummyPage} ${styles.linedPage}`} style={{ zIndex: 10 }}>
-                    <div className={styles.pageContent} style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 0 }}>
-                        <div style={{ position: 'absolute', top: '2.5rem', left: '2rem', fontFamily: 'var(--font-handwriting)', fontSize: '1.1rem', color: '#999' }}>
-                            Date:
-                        </div>
+                    <div className={styles.pageContent} style={{ position: 'relative' }}>
 
-                        <div ref={titleRef} style={{ marginTop: '4.5rem', paddingLeft: '2rem', fontFamily: 'var(--font-handwriting)', fontSize: '2rem', color: '#333', letterSpacing: '1px' }}>
-                            kamu itu
-                        </div>
-
-                        <div style={{ paddingLeft: '2.2rem', fontFamily: 'var(--font-handwriting)', fontSize: '1.1rem', color: '#888', fontStyle: 'italic', marginTop: '0.3rem' }}>
-                            Orya sayang, aku mungkin...
-                        </div>
-
-                        {/* ══ Clean white player card (matches reference) ══ */}
-                        <div style={{ position: 'relative', width: '86%', maxWidth: '320px', margin: '2.6rem auto 0' }}>
-
-                            {/* Disc — peeks out of the top-left corner of the card */}
-                            <div
-                                ref={vinylWrapRef}
-                                style={{ position: 'absolute', top: '-30px', left: '14px', width: '86px', height: '86px', zIndex: 3 }}
-                            >
-                                <div style={{ position: 'absolute', inset: '-4px', borderRadius: '50%', background: '#fff', boxShadow: '0 6px 14px rgba(0,0,0,0.22)' }} />
-                                <svg
-                                    ref={vinylRef}
-                                    width={86} height={86} viewBox="0 0 128 128"
-                                    style={{ position: 'relative', borderRadius: '50%' }}
-                                >
-                                    <defs>
-                                        <clipPath id={clipId}>
-                                            <circle cx={64} cy={64} r={64} />
-                                        </clipPath>
-                                    </defs>
-                                    <g clipPath={`url(#${clipId})`}>
-                                        {albumArt ? (
-                                            // Auto-renders the provided album art, cropped to a circle
-                                            <image href={albumArt} x={0} y={0} width={128} height={128} preserveAspectRatio="xMidYMid slice" />
-                                        ) : (
-                                            // Default illustrated label when no album art is supplied
-                                            <>
-                                                <rect width={128} height={128} fill="#111318" />
-                                                <circle cx={20} cy={20} r={2} fill="#fff" />
-                                                <circle cx={40} cy={30} r={2} fill="#fff" />
-                                                <circle cx={60} cy={10} r={2} fill="#fff" />
-                                                <circle cx={80} cy={40} r={2} fill="#fff" />
-                                                <circle cx={100} cy={20} r={2} fill="#fff" />
-                                                <circle cx={120} cy={50} r={2} fill="#fff" />
-                                                <circle cx={90} cy={30} r={10} fill="#fff" fillOpacity="0.5" />
-                                                <circle cx={90} cy={30} r={8} fill="#fff" />
-                                                <path d="M0 128 Q32 64 64 128 T128 128" fill="#7e3ff2" opacity="0.9" />
-                                                <path d="M0 128 Q32 48 64 128 T128 128" fill="#9b6bf0" opacity="0.9" />
-                                                <path d="M0 128 Q32 32 64 128 T128 128" fill="#5b2fc7" opacity="0.9" />
-                                                <path d="M0 128 Q16 64 32 128 T64 128" fill="#7e3ff2" opacity="0.9" />
-                                                <path d="M64 128 Q80 64 96 128 T128 128" fill="#9b6bf0" opacity="0.9" />
-                                            </>
-                                        )}
-                                    </g>
-                                </svg>
-                                <div ref={notesLayerRef} style={{ position: 'absolute', top: '-40px', left: 0, width: '90px', height: '40px', pointerEvents: 'none', overflow: 'visible' }} />
+                        {/* Photo frame with chat captions */}
+                        <div ref={frameRef} style={{
+                            position: 'absolute', top: '1.6rem', left: '1.3rem', width: '11rem', height: '6.4rem',
+                            background: '#fff', border: '5px solid #d9a8cc', borderRadius: '10px',
+                            boxShadow: '0 8px 16px rgba(0,0,0,0.15)', display: 'flex', overflow: 'hidden',
+                        }}>
+                            <div style={{ width: '45%', height: '100%', borderRadius: '4px', overflow: 'hidden' }}>
+                                {photoBox({}, framePhoto1, 'photo')}
                             </div>
-
-                            {/* Card body */}
-                            <div
-                                ref={playerBoxRef}
-                                onMouseEnter={handleBoxEnter}
-                                onMouseLeave={handleBoxLeave}
-                                style={{
-                                    background: '#fff',
-                                    borderRadius: '20px',
-                                    boxShadow: '0 10px 26px rgba(0,0,0,0.12)',
-                                    padding: '1.6rem 1.2rem 1.1rem 1.2rem',
-                                    position: 'relative',
-                                }}
-                            >
-                                {/* Title + artist, offset right so the disc doesn't overlap the text */}
-                                <div ref={songInfoRef} style={{ marginLeft: '78px', minHeight: '50px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                    <span style={{ fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif', fontSize: '1.15rem', fontWeight: 700, color: '#1a1a1a', lineHeight: 1.2 }}>
-                                        {songTitle}
-                                    </span>
-                                    <span style={{ fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif', fontSize: '0.95rem', color: '#8a8a8a', marginTop: '2px' }}>
-                                        {artistName}
-                                    </span>
-                                </div>
-
-                                {/* Progress bar */}
-                                <div ref={progressRef} style={{ marginTop: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                                    <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: '0.8rem', color: '#9a9a9a', minWidth: '30px' }}>{fmt(currentTime)}</span>
-                                    <div
-                                        style={{ position: 'relative', flex: 1, height: '4px', background: '#e6e6ea', borderRadius: '3px', cursor: 'pointer' }}
-                                        onClick={(e) => {
-                                            const rect = e.currentTarget.getBoundingClientRect();
-                                            const pct = (e.clientX - rect.left) / rect.width;
-                                            setCurrentTime(Math.round(pct * totalDuration));
-                                        }}
-                                    >
-                                        <div style={{ width: `${progressPct}%`, height: '100%', background: '#c9c6d6', borderRadius: '3px', transition: 'width 1s linear' }} />
-                                        <div ref={thumbRef} style={{ position: 'absolute', top: '50%', left: `${progressPct}%`, transform: 'translate(-50%,-50%)', width: '11px', height: '11px', borderRadius: '50%', background: '#fff', border: '2px solid #9b93b0', boxShadow: '0 1px 3px rgba(0,0,0,0.25)' }} />
-                                    </div>
-                                    <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: '0.8rem', color: '#9a9a9a', minWidth: '30px', textAlign: 'right' }}>{fmt(totalDuration)}</span>
-                                </div>
-
-                                {/* Controls */}
-                                <div ref={controlsRef} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1.4rem', marginTop: '0.9rem' }}>
-
-                                    {/* Repeat */}
-                                    <button
-                                        onClick={toggleRepeat}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', display: 'flex' }}
-                                    >
-                                        <span ref={repeatIconRef} style={{ display: 'inline-flex' }}>
-                                            <svg xmlns="http://www.w3.org/2000/svg" width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={isRepeat ? '#333' : '#9a9a9a'} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                                                <polyline points="17 1 21 5 17 9" />
-                                                <path d="M3 11V9a4 4 0 0 1 4-4h14" />
-                                                <polyline points="7 23 3 19 7 15" />
-                                                <path d="M21 13v2a4 4 0 0 1-4 4H3" />
-                                            </svg>
-                                        </span>
-                                    </button>
-
-                                    {/* Skip back */}
-                                    <button
-                                        onClick={() => handleSkip(-15)}
-                                        onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.15, duration: 0.2 })}
-                                        onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, duration: 0.2 })}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', display: 'flex' }}
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                                            <polygon points="19 20 9 12 19 4 19 20" />
-                                            <line x1={5} y1={19} x2={5} y2={5} />
-                                        </svg>
-                                    </button>
-
-                                    {/* Play / Pause */}
-                                    <button
-                                        ref={playBtnRef}
-                                        onClick={togglePlay}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', display: 'flex' }}
-                                    >
-                                        {isPlaying ? (
-                                            <svg xmlns="http://www.w3.org/2000/svg" width={26} height={26} viewBox="0 0 24 24" fill="#1a1a1a">
-                                                <rect x={6} y={4} width={4} height={16} rx={1} />
-                                                <rect x={14} y={4} width={4} height={16} rx={1} />
-                                            </svg>
-                                        ) : (
-                                            <svg xmlns="http://www.w3.org/2000/svg" width={26} height={26} viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                                                <polygon points="5 3 19 12 5 21 5 3" />
-                                            </svg>
-                                        )}
-                                    </button>
-
-                                    {/* Skip forward */}
-                                    <button
-                                        onClick={() => handleSkip(15)}
-                                        onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.15, duration: 0.2 })}
-                                        onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, duration: 0.2 })}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', display: 'flex' }}
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                                            <polygon points="5 4 15 12 5 20 5 4" />
-                                            <line x1={19} y1={5} x2={19} y2={19} />
-                                        </svg>
-                                    </button>
-
-                                    {/* List */}
-                                    <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', display: 'flex' }}>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#9a9a9a" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                                            <line x1={8} y1={6} x2={21} y2={6} />
-                                            <line x1={8} y1={12} x2={21} y2={12} />
-                                            <line x1={8} y1={18} x2={21} y2={18} />
-                                            <line x1={3} y1={6} x2="3.01" y2={6} />
-                                            <line x1={3} y1={12} x2="3.01" y2={12} />
-                                            <line x1={3} y1={18} x2="3.01" y2={18} />
-                                        </svg>
-                                    </button>
-                                </div>
+                            <div style={{ flex: 1, padding: '0.4rem', display: 'flex', flexDirection: 'column', gap: '0.3rem', justifyContent: 'center' }}>
+                                <div style={{ background: '#f6d7e6', borderRadius: '8px', padding: '0.2rem 0.4rem', fontFamily: 'system-ui, sans-serif', fontSize: '0.6rem', color: '#333' }}>{frameCaption1}</div>
+                                <div style={{ background: '#e8e8f2', borderRadius: '8px', padding: '0.2rem 0.4rem', fontFamily: 'system-ui, sans-serif', fontSize: '0.6rem', color: '#333' }}>{frameCaption2}</div>
                             </div>
                         </div>
 
+                        <div ref={sunRef} style={{ position: 'absolute', top: '1.4rem', right: '2.2rem' }}>
+                            <Sun size={60} />
+                        </div>
+
+                        {/* Do you love me? quiz doodle */}
+                        <div ref={quizRef} style={{ position: 'absolute', top: '2.4rem', right: '0.6rem', width: '9rem', textAlign: 'right' }}>
+                            <div style={{ fontFamily: 'var(--font-handwriting)', fontSize: '1.15rem', color: '#333', lineHeight: 1.2 }}>
+                                Do you love me?
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.4rem', marginTop: '0.4rem', alignItems: 'center' }}>
+                                <span style={{ fontFamily: 'var(--font-handwriting)', fontSize: '0.85rem' }}>YES</span>
+                                <span style={{ width: '14px', height: '14px', border: '2px solid #333', display: 'inline-block' }} />
+                                <span style={{ fontFamily: 'var(--font-handwriting)', fontSize: '0.85rem' }}>YES</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.4rem', marginTop: '0.2rem', alignItems: 'center' }}>
+                                <span style={{ fontFamily: 'var(--font-handwriting)', fontSize: '0.85rem' }}>NO ¬_¬</span>
+                                <span style={{ width: '14px', height: '14px', border: '2px solid #333', display: 'inline-block' }} />
+                            </div>
+                        </div>
+
+                        {/* Love definition */}
+                        <div ref={loveDefRef} style={{ position: 'absolute', top: '9rem', left: '1.3rem', right: '1.3rem' }}>
+                            <div style={{ fontFamily: 'var(--font-handwriting)', fontSize: '1.6rem', color: '#333', textDecoration: 'underline', textDecorationColor: '#f0a8c0' }}>
+                                &ldquo;Love&rdquo;
+                            </div>
+                            <p style={{ fontFamily: 'var(--font-handwriting)', fontSize: '0.92rem', color: '#333', lineHeight: 1.5, marginTop: '0.3rem' }}>
+                                {loveDefinition}
+                            </p>
+                        </div>
+
+                        <div style={{
+                            position: 'absolute', top: '9.2rem', right: '0.8rem', background: '#ffe98a',
+                            padding: '0.4rem 0.6rem', borderRadius: '3px', transform: 'rotate(-8deg)',
+                            fontFamily: 'var(--font-handwriting)', fontSize: '0.85rem', color: '#333',
+                            boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
+                        }}>
+                            LOVE<br />YOU
+                        </div>
+
+                        <div style={{ position: 'absolute', top: '14rem', right: '3.4rem' }}>
+                            <Butterfly size={34} />
+                        </div>
+
+                        {/* About Me */}
+                        <div ref={aboutRef} style={{ position: 'absolute', bottom: '7rem', left: '1.3rem', width: '11.5rem' }}>
+                            <div style={{
+                                fontFamily: 'var(--font-handwriting)', fontWeight: 700, fontSize: '1.3rem', color: '#8ac93e',
+                                background: 'linear-gradient(180deg,#a6e34d,#8ac93e)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                            }}>
+                                {aboutMeTitle}
+                            </div>
+                            <p style={{ fontFamily: 'var(--font-handwriting)', fontSize: '0.85rem', color: '#333', lineHeight: 1.5, marginTop: '0.3rem' }}>
+                                {aboutMeText}
+                            </p>
+                        </div>
+
+                        {/* About me photo */}
+                        <div ref={aboutPhotoRef} style={{
+                            position: 'absolute', bottom: '1.4rem', right: '1.2rem', width: '7.6rem', height: '9.2rem',
+                            borderRadius: '14px', overflow: 'hidden', boxShadow: '0 8px 20px rgba(150,110,200,0.35)',
+                            border: '3px solid #d9c6f0',
+                        }}>
+                            {photoBox({}, aboutMePhoto, 'photo')}
+                            <span style={{ position: 'absolute', bottom: '4px', right: '4px', fontSize: '1.1rem' }}>🧸</span>
+                            <span style={{
+                                position: 'absolute', top: '6px', left: '6px', fontFamily: 'var(--font-handwriting)',
+                                fontSize: '0.9rem', color: '#8ac93e', transform: 'rotate(-4deg)',
+                            }}>{aboutMeName}</span>
+                            <span style={{
+                                position: 'absolute', top: '-16px', right: '4px', fontFamily: 'var(--font-handwriting)',
+                                fontSize: '0.85rem', color: '#8ac93e',
+                            }}>Hii!</span>
+                        </div>
                     </div>
                 </div>
             </div>
